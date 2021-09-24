@@ -1,0 +1,31 @@
+\documentclass{article}  %% large while editing
+\RequirePackage{ agda, tikz-cd, amssymb, catchfilebetweentags, newunicodechar
+               , datetime2, geometry, relsize, xcolor
+               , caption, subcaption, natbib }
+
+%% Currently unused: , amssymb, stmaryrd, setspace, comment, scalerel
+
+\geometry{margin=1in} % 1in to share, and 0.2 to preview
+
+\input{macros}
+
+%% Arrow labels are too small by default
+\tikzcdset{every label/.append style = {font = \normalsize}}
+\tikzcdset{every diagram/.append style = {math mode = false, ampersand replacement=\&}}
+
+\tikzcdset{   row sep/normal=17ex}
+\tikzcdset{column sep/normal=8em}
+
+\nc\arD[2]{\arrow[#1, "#2"{description}]}
+\nc\arR[1]{\arD{r}{#1} \&}
+\nc\arU[1]{\arD{u}{#1}}
+\nc\arUR[2]{\arD{u}{#1} \arD{r}{#2} \&}
+
+\author{Sean Seefried}
+
+\begin{document}
+
+This is a paragraph that is introducing my work on inequality
+
+
+\end{document}

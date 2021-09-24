@@ -1,0 +1,109 @@
+\newcommand\uni[2]{\newunicodechar{#1}{\ensuremath{#2}}}
+
+%% Remember to express horizontal movement in ems and vertical in exs and
+%% nothing in pt, to adapt to font size changes.
+
+\uni{⦃}{\{\hspace{-0.41em}\{}
+\uni{⦄}{\}\hspace{-0.41em}\}}
+
+\newcommand\sm[1]{\mathsf{#1}}
+%% \uni{ℕ}{\sm{N}}
+%% \uni{𝔹}{\sm{B}}
+%% \uni{𝔽}{\sm{F}}
+
+\uni{𝕥}{\sm{t}}
+\uni{𝕗}{\sm{f}}
+\uni{𝕫}{\sm{z}}
+\uni{𝕠}{\sm{o}}
+
+\usepackage{bm}
+\uni{ℕ}{\mathbb{N}}
+\uni{𝔹}{\mathbb{B}}
+\uni{𝔽}{\mathbb{F}}
+
+\uni{𝐶}{\mathit{C}}
+
+\uni{μ}{\mu}
+\uni{⊗}{\otimes}
+\uni{×}{\times}
+\uni{∘}{\circ}
+\uni{▵}{\vartriangle}
+\uni{∎}{\blacksquare}
+\uni{∙}{\bullet}
+
+\uni{↑}{\uparrow}
+\uni{⇑}{\Uparrow}
+\uni{⟰}{\dot\Uparrow}
+\uni{⇉}{\rightrightarrows}
+\uni{↦}{\rightarrowtail}
+%% \Rightarrow \rightarrowtail
+
+\uni{λ}{\lambda}
+\uni{μ}{\mu}
+\uni{τ}{\tau}
+\uni{σ}{\sigma}
+
+\uni{ᶜ}{^c}
+\uni{ᵀ}{^T}
+\uni{≗}{\ \circeq\ }
+\uni{·}{\cdot}
+\uni{◎}{\circledcirc}
+\uni{⊕}{\oplus}
+\uni{∧}{\wedge}
+\uni{∨}{\vee}
+\uni{⊤}{\top}
+
+%% Subscripts
+\uni{₀}{_0}
+\uni{₁}{_1}
+\uni{₂}{_2}
+\uni{₃}{_3}
+\uni{₄}{_4}
+\uni{₅}{_5}
+\uni{₆}{_6}
+\uni{₇}{_7}
+\uni{₈}{_8}
+\uni{₉}{_9}
+
+\uni{ᵢ}{_i}
+\uni{ₒ}{_o}
+\uni{ₘ}{_m}
+\uni{ₙ}{_n}
+\uni{ᵣ}{_r}
+\uni{ₛ}{_s}
+
+%% Superscripts
+\uni{²}{^2}
+\uni{³}{^3}
+\uni{⁻}{\raisebox{0.6ex}{-}}
+\uni{ⁱ}{\raisebox{1ex}{\smaller i}}
+\uni{ᵒ}{\raisebox{1ex}{\smaller o}}
+\uni{ⱽ}{^v}
+\uni{ᶻ}{^z}
+\newunicodechar{ˡ}{\raisebox{0.6ex}{\smaller[4]{l}}}
+\newunicodechar{ʳ}{\raisebox{0.7ex}{\smaller r}}
+
+\uni{⊣}{\dashv}
+
+\RequirePackage{bbding}
+
+\uni{≈}{\approx}
+\uni{≡}{\equiv}
+\uni{≗}{\circeq}
+\uni{∀}{\forall}
+\uni{≤}{\le}
+\uni{⊹}{\dotplus}
+
+\uni{⟨}{\langle}
+\uni{⟩}{\rangle}
+
+%%https://tex.stackexchange.com/questions/486120/using-the-unicode-prime-character-outside-math-mode-with-unicode-math-and-newuni
+\AtBeginDocument{\newunicodechar{′}{\ensuremath{'}}}
+
+
+%% \uni{✯}{\mathop{\mbox{\tiny \FiveStarOutlineHeavy}}}
+
+%% Invisible characters for otherwise clashing definitions.
+\newunicodechar{⇂}{}
+\newunicodechar{⇃}{}
+
