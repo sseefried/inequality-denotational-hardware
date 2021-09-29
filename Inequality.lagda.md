@@ -34,7 +34,7 @@ clarity.
 ℕ² : Set
 ℕ² = ℕ × ℕ
 
-𝔽² : (i,j : ℕ × ℕ) → Set
+𝔽² : (i,j : ℕ²) → Set
 𝔽² (i , j) = 𝔽 i × 𝔽 j
 ```
 
@@ -60,7 +60,7 @@ We choose to implement `_𝔽≤_` in a similar way. We directly define it as:
 
 
 ```
-𝔽≤ : {i,j : ℕ × ℕ} → 𝔽² i,j → 𝔹
+𝔽≤ : {i,j : ℕ²} → 𝔽² i,j → 𝔹
 𝔽≤ (m , n) = ℕ≤ (toℕ m , toℕ n)
 ```
 
@@ -73,9 +73,9 @@ toℕ² (m , n) = (toℕ m , toℕ n)
 ```
 
        ℕ²  --- ℕ≤ --- 𝔹
-         |             |
-      toℕ²             id
-       |               |
+       |              |
+      toℕ²            id
+       |              |
       𝔽² k --- 𝔽≤ --- 𝔹
 
 ```
@@ -83,13 +83,18 @@ toℕ-≤ : {i,j : ℕ²} → 𝔽≤ {i,j} ≗ ℕ≤ ∘ toℕ²
 toℕ-≤ _ = refl
 ```
 
-Let's now encapsulate that proof using an Arrow Category.
+Let's now encapsulate that proof using an instance of an _arrow category_.
 
 ```
 𝔽≤⇉ : {i,j : ℕ²} → toℕ² {i,j} ⇉ id
 𝔽≤⇉ = arr 𝔽≤ ℕ≤ toℕ-≤
 ```
 
+For want of a better term we are going to call this a
+Specification-Implementation-Mapping Proof (SIM proof) in the rest of
+this note.
+
+## A first attempt at defining inequality on multi-digit representations
 
 Computing inequality for a unary representation is expensive. An
 inspection of `ℕ≤` reveals that `min (m , n)` steps are required to
@@ -117,77 +122,43 @@ It looks like we are going to need to define less-than and equality
 operators for both `ℕ` and `𝔽`.
 
 ```
-ℕ< : ℕ² → 𝔹
-ℕ< (zero  , suc _) = true
-ℕ< (_ , zero )     = false
-ℕ< (suc m , suc n) = ℕ< (m , n)
-
 𝔽< : {i,j : ℕ²} → 𝔽² i,j → 𝔹
 𝔽< (zero  , suc _) = true
 𝔽< (_     , zero ) = false
 𝔽< (suc m , suc n)= 𝔽< (m , n)
 
-toℕ²-ℕ< : {i,j : ℕ²} → 𝔽< {i,j} ≗  ℕ< ∘ toℕ² {i,j}
-toℕ²-ℕ<  (zero  , zero)  = refl
-toℕ²-ℕ<  (zero  , suc _) = refl
-toℕ²-ℕ<  (suc m , zero ) = refl
-toℕ²-ℕ<  (suc m , suc n) = toℕ²-ℕ< (m , n)
-
-ℕ= : ℕ² → 𝔹
-ℕ= (zero  , zero ) = true
-ℕ= (zero  , suc _) = false
-ℕ= (suc _ , zero ) = false
-ℕ= (suc m , suc n)= ℕ= (m , n)
-
 𝔽= : {i,j : ℕ²} → 𝔽² i,j → 𝔹
 𝔽= (zero  , zero ) = true
 𝔽= (zero  , suc _) = false
 𝔽= (suc _ , zero ) = false
-𝔽= (suc m , suc n)= 𝔽= (m , n)
-
-toℕ²-ℕ= : {i,j : ℕ²} → 𝔽= {i,j} ≗  ℕ= ∘ toℕ² {i,j}
-toℕ²-ℕ=  (zero  , zero)  = refl
-toℕ²-ℕ=  (zero  , suc _) = refl
-toℕ²-ℕ=  (suc m , zero ) = refl
-toℕ²-ℕ=  (suc m , suc n) = toℕ²-ℕ= (m , n)
+𝔽= (suc m , suc n) = 𝔽= (m , n)
 ```
 
+Just like for the operation of addition, it looks like some notion of
+_carry-in_ becomes necessary when doing inequality on multi-digit
+numbers. The necessity of carry-in implies that carry-out is also
+necessary so that it may be fed into the comparison of the next digit
+position.
 
+Using our previous discussion of the comparison of 34 and 123 as
+inspiration, at first it seems like the carry-in should be a pair of
+booleans, one denoting whether the two digits are less-than each
+other and the other denoting whether they are equal.
 
-Just like for the operation of addition, a notion of _carry-in_
-becomes necessary when doing inequality on multi-digit
-numbers. Except, in this case, the carry-in is not a digit and there
-are not one but two of them. They are both boolean values. The first
-specifies whether the the previous leading digits satisfies the less
-than predicate, and the second whether they were equal.
+However, we quickly see that when the boolean denoting less-than is
+true this implies the boolean denoting equality is false, and vice
+versa.
 
---------------
+This leads us to consider a new data type.
 
-Actually this could be completely wrong. I really need to think carefully
-about what is a carry-in and what is a carry-out. In addition the carry-in is
-the carry-out of a previous operation.
+## Generalising from less-than-or-equal to a comparison relation
 
-However, in the case of inequality there is no extra information required in the
-result other than whether the first number is less-than-or-equal
-to the other number.
+Instead of a pair of booleans denoting less-than and equality
+relationships between two numbers, we can instead ask "what is the
+relationship between two numbers"? This leads us to define to the
+following data type `R` which denotes whether two numbers are
+less-than, equal, or greater-than each other respectively.
 
-Perhaps there is a principle that says "if you introduce carry-in then you must
-introduce a carry-out and it must be the same value"
-
-Perhaps the correct type is `𝔹 × 𝔹 × 𝔽² i,j → 𝔹 × 𝔹 × 𝔹`? But what would the
-two values signify? In addition the carry-out depends on the carry-in and the two
-digits being added.
-
-For inequality what could the carry-out mean? There is no extra information like
-in the case of addition. In the case of addition the carry-out tells you whether
-there was some form of overflow _after_ you had taken into account the carry-in
-and the values of the two digits.
-
-But if there is no carry-out then how can there be a carry-in?
-
-Okay, here's another formulation. What if the output of `le𝔽` isn't whether it's
-less-than-or-equal but a sum-type specifying whether it is less-than, equal, or
-greater-than? Then the function shouldn't even be called `le𝔽`.
 
 ```
 data R : Set where
@@ -196,7 +167,26 @@ data R : Set where
   is> : R
 ```
 
-Here are some new primitive functions
+This has some immediate implications. First, in order to define a
+less-than-or-equal function which returns a boolean we will now
+require an auxillary function of type `R → 𝔹`. Fortunately, this
+is trivial to define.
+
+```
+R-is≤ : R → 𝔹
+R-is≤ is< = 𝕥
+R-is≤ is= = 𝕥
+R-is≤ is> = 𝕗
+```
+
+Second, but much more importantly, we have shifted to solving a more
+general problem which will yield immediate dividends. In the process
+of deriving a less-than-or-equal function we have come up with a
+building block that can be used for equality and any of the other
+inequality relations. This delights me.
+
+Now that we have declared the `R` data type we no longer have need of
+functions `F<`, `F=`, etc. Instead we define a function `𝔽-compare`.
 
 ```
 𝔽-compare : {i,j : ℕ²} → 𝔽² i,j → R
@@ -204,7 +194,10 @@ Here are some new primitive functions
 𝔽-compare (zero , suc _)   = is<
 𝔽-compare (suc _ , zero)   = is>
 𝔽-compare (suc m , suc n)  = 𝔽-compare (m , n)
+```
 
+
+```
 ℕ-compare : ℕ² → R
 ℕ-compare (zero , zero)    = is=
 ℕ-compare (zero , suc _)   = is<
@@ -260,7 +253,7 @@ toℕ²-relationℕ : {i,j : ℕ²} → relation𝔽 {i,j} ≗ relationℕ ∘ (
 toℕ²-relationℕ {i,j} (r , (m , n)) rewrite eq-relation𝔽-relation𝔽 {i,j} r (m , n) = refl
 ```
 
-We can now package this up as an Arrow Category.
+We can now package this up as a SIM proof.
 
 ```
 relation𝔽⇉ : {i,j : ℕ²} → id ⊗ toℕ² {i,j} ⇉ id
