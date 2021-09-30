@@ -196,6 +196,8 @@ functions `F<`, `F=`, etc. Instead we define a function `𝔽-compare`.
 𝔽-compare (suc m , suc n)  = 𝔽-compare (m , n)
 ```
 
+We also define an equivalent function on ℕ and prove a correspondence
+between the two.
 
 ```
 ℕ-compare : ℕ² → R
@@ -211,51 +213,82 @@ toℕ²-ℕ-compare (suc _ , zero)  = refl
 toℕ²-ℕ-compare (suc m , suc n) = toℕ²-ℕ-compare (m , n)
 ```
 
+We are now finally in a position to define a comparison function
+involving carry-in/out. We use the a super-script `c` (`ᶜ`) in the
+name to distinguish it.
+
+We are immediately faced with the question: what should the type of
+this function be? The source type is easy. It should be the carry-in
+along with the two numbers to compare.
+
 ```
-relation𝔽 : {i,j : ℕ²} → R × 𝔽² i,j → R
-relation𝔽 (is< , _ , _) = is<
-relation𝔽 (is= , m , n) = 𝔽-compare (m , n)
-relation𝔽 (is> , m , n) = is>
+Cⁱ : Set → Set
+Cⁱ a = R × a
+
+𝔽Cⁱ : ℕ → Set
+𝔽Cⁱ k = Cⁱ (𝔽² (k , k))
+
+ℕCⁱ : Set
+ℕCⁱ = Cⁱ ℕ²
 ```
 
+But what about the target type? For the case of addition it was a pair
+containing the result of the adding the two numbers along with the
+carry-out bit. However, in the case of less-than-or-equal, our result
+type _is the same as_ our carry-in type. Thus we just return a value
+of type `R`.  Later, when we use our function to compare multiple
+digits we just feed the result in _as_ the carry-in to the next
+invocation.
 
-      R × ℕ² --- relationℕ ---> R
-        ^                       ^
-        |                       |
-     id ⊗ toℕ²                 id
-        |                       |
-     R × 𝔽² --- relation𝔽 ----> R
+Here is the definition of `𝔽-compareᶜ`.
+
+```
+𝔽-compareᶜ : {k : ℕ} → 𝔽Cⁱ k → R
+𝔽-compareᶜ (is< , _ , _) = is<
+𝔽-compareᶜ (is= , m , n) = 𝔽-compare (m , n)
+𝔽-compareᶜ (is> , m , n) = is>
+```
+
+What does comparison-with-carry look like on natural numbers? It
+should satisfy the following commutative diagram.
+
+
+      R × ℕ² --- ℕ-compareᶜ ---> R
+        ^                        ^
+        |                        |
+     id ⊗ toℕ²                  id
+        |                        |
+     R × 𝔽² --- 𝔽-compareᶜ ----> R
 
 Just like for the operation of addition we will need to "guess" what
-the definition of `relationℕ` should be, but we will quickly find out
+the definition of `ℕ-compareᶜ` should be, but we will quickly find out
 whether it is correct or not when we try to prove the commutative
 diagram holds.
 
 
 ```
-relationℕ : R × ℕ² → R
-relationℕ (is< , _ , _) = is<
-relationℕ (is= , m , n) = ℕ-compare (m , n)
-relationℕ (is> , m , n) = is>
+ℕ-compareᶜ : ℕCⁱ → R
+ℕ-compareᶜ (is< , _ , _) = is<
+ℕ-compareᶜ (is= , m , n) = ℕ-compare (m , n)
+ℕ-compareᶜ (is> , m , n) = is>
 ```
 
-The property we need to prove is called `toℕ²-relationℕ`.
-
+The property we need to prove is called `toℕ²-ℕ-compareᶜ`.
 
 ```
+-- Helper proof
+eq-𝔽-compareᶜ-𝔽-compareᶜ : {k : ℕ} → (r : R) → (m,n :  𝔽² (k , k)) → 𝔽-compareᶜ {k} (r , m,n) ≡ ℕ-compareᶜ (r , toℕ² m,n)
+eq-𝔽-compareᶜ-𝔽-compareᶜ is< m,n = refl
+eq-𝔽-compareᶜ-𝔽-compareᶜ is= m,n rewrite sym (toℕ²-ℕ-compare m,n) = refl
+eq-𝔽-compareᶜ-𝔽-compareᶜ is> m,n = refl
 
-eq-relation𝔽-relation𝔽 : {i,j : ℕ²} → (r : R) → (m,n :  𝔽² i,j) → relation𝔽 {i,j} (r , m,n) ≡ relationℕ (r , toℕ² m,n)
-eq-relation𝔽-relation𝔽 is< m,n = refl
-eq-relation𝔽-relation𝔽 is= m,n rewrite sym (toℕ²-ℕ-compare m,n) = refl
-eq-relation𝔽-relation𝔽 is> m,n = refl
-
-toℕ²-relationℕ : {i,j : ℕ²} → relation𝔽 {i,j} ≗ relationℕ ∘ (id ⊗ toℕ²)
-toℕ²-relationℕ {i,j} (r , (m , n)) rewrite eq-relation𝔽-relation𝔽 {i,j} r (m , n) = refl
+toℕ²-ℕ-compareᶜ : {k : ℕ} → 𝔽-compareᶜ {k} ≗ ℕ-compareᶜ ∘ (id ⊗ toℕ²)
+toℕ²-ℕ-compareᶜ {k} (r , (m , n)) rewrite eq-𝔽-compareᶜ-𝔽-compareᶜ {k} r (m , n) = refl
 ```
 
 We can now package this up as a SIM proof.
 
 ```
-relation𝔽⇉ : {i,j : ℕ²} → id ⊗ toℕ² {i,j} ⇉ id
-relation𝔽⇉ = arr relation𝔽 relationℕ toℕ²-relationℕ
+𝔽-compareᶜ⇉ : {k : ℕ} → id ⊗ toℕ² {k , k} ⇉ id
+𝔽-compareᶜ⇉ = arr 𝔽-compareᶜ ℕ-compareᶜ toℕ²-ℕ-compareᶜ
 ```
