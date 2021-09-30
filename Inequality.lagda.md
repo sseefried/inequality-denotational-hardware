@@ -219,7 +219,10 @@ name to distinguish it.
 
 We are immediately faced with the question: what should the type of
 this function be? The source type is easy. It should be the carry-in
-along with the two numbers to compare.
+along with the two numbers to compare. Note, here we set the numbers
+to have the same bound `k` since we are looking at the specific case
+of comparing two numbers that use the same positional number system
+including the base of each digit.
 
 ```
 Cⁱ : Set → Set
@@ -253,12 +256,12 @@ What does comparison-with-carry look like on natural numbers? It
 should satisfy the following commutative diagram.
 
 
-      R × ℕ² --- ℕ-compareᶜ ---> R
-        ^                        ^
-        |                        |
-     id ⊗ toℕ²                  id
-        |                        |
-     R × 𝔽² --- 𝔽-compareᶜ ----> R
+       ℕCⁱ --- ℕ-compareᶜ ---> R
+        ^                      ^
+        |                      |
+     id ⊗ toℕ²                 id
+        |                      |
+      𝔽Cⁱ k - 𝔽-compareᶜ ----> R
 
 Just like for the operation of addition we will need to "guess" what
 the definition of `ℕ-compareᶜ` should be, but we will quickly find out
