@@ -295,3 +295,54 @@ We can now package this up as a SIM proof.
 𝔽-compareᶜ⇉ : {k : ℕ} → id ⊗ toℕ² {k , k} ⇉ id
 𝔽-compareᶜ⇉ = arr 𝔽-compareᶜ ℕ-compareᶜ toℕ²-ℕ-compareᶜ
 ```
+
+## Abstracting on comparison functions
+
+At this point we could be hasty and simply derive a comparison
+function that uses bit vectors. But let's _not_ be hasty. To avoid this
+we can abstract over the notion of comparison-with-carry.
+
+Using a similar idea from Conal's "Adders and Arrows" note, we replace
+the representation type, `𝔽 k`, with an arbitrary representation type `τ`
+and introduce a meaning function `μ : τ → 𝔽 k` for some `k : ℕ`.
+
+```
+τCⁱ : Set → Set
+τCⁱ τ =  R × τ × τ
+```
+
+It should satisfy the following commutative diagram:
+
+      𝔽Cⁱ k -- 𝔽-compareᶜ --> R
+        ^                    ^
+        |                    |
+    id ⊗ μ ⊗ μ               id
+        |                    |
+      τCⁱ k --- compareᶜ ---> R
+
+In code:
+
+```
+is-compare : { τ : Set } {k : ℕ} (μ : τ → 𝔽 k) (compareᶜ : τCⁱ τ → R) → Set
+is-compare μ compareᶜ = compareᶜ ≗ 𝔽-compareᶜ ∘ (id ⊗ μ ⊗ μ)
+```
+
+Let's now package `compareᶜ` functions along with proofs that they are valid
+refinements of `𝔽-compareᶜ`.
+
+```
+infix 1 _⊣_
+record Comparison {τ : Set} {k : ℕ} (μ : τ → 𝔽 k) : Set where
+  constructor _⊣_
+  field
+    compareᶜ : τCⁱ τ → R
+    is : is-compare μ compareᶜ
+```
+
+We can now define a SIM proof _generator_ that, given a value of type `Comparison μ`
+yields a SIM proof satisfying the commutative diagram above.
+
+```
+mk-compareᶜ⇉ : {τ : Set} {k : ℕ} {μ : τ → 𝔽 k} → Comparison μ → id ⊗ μ ⊗ μ ⇉ id
+mk-compareᶜ⇉ (compareᶜ ⊣ is) = arr compareᶜ 𝔽-compareᶜ is
+```
