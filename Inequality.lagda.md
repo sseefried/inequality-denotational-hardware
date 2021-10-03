@@ -6,7 +6,7 @@ module Inequality where
 
 open import Level using (0ℓ)
 open import Relation.Binary.Core using (Rel)
-open import Data.Bool renaming (Bool to 𝔹) hiding (_≤_)
+open import Data.Bool renaming (Bool to 𝔹) hiding (_≤_;not;_∧_)
 open import Data.Nat hiding (_≤_ ; _≤ᵇ_)
 import Data.Nat as ℕ
 open import Data.Product using (_,_)
@@ -36,6 +36,9 @@ clarity.
 
 𝔽² : (i,j : ℕ²) → Set
 𝔽² (i , j) = 𝔽 i × 𝔽 j
+
+𝔹² : Set
+𝔹² = 𝔹 × 𝔹
 ```
 
 ```
@@ -346,3 +349,82 @@ yields a SIM proof satisfying the commutative diagram above.
 mk-compareᶜ⇉ : {τ : Set} {k : ℕ} {μ : τ → 𝔽 k} → Comparison μ → id ⊗ μ ⊗ μ ⇉ id
 mk-compareᶜ⇉ (compareᶜ ⊣ is) = arr compareᶜ 𝔽-compareᶜ is
 ```
+
+A SIM proof generator for the entire commutative tower is given below.
+
+```
+mk-tower⇉ : {τ : Set} {k : ℕ} {μ : τ → 𝔽 k} →
+  Comparison μ → (id ⊗ toℕ²) ∘ (id ⊗ μ ⊗ μ) ⇉ id
+mk-tower⇉ comparison = 𝔽-compareᶜ⇉ ◎ mk-compareᶜ⇉ comparison
+```
+
+## A single-bit comparison function
+
+We can now look at implementing a single bit inequality
+function. However, if we are going to generate a circuit from this we
+will have to use boolean values to represent values of both type `R`
+and `𝔽 2`.
+
+For values of type `R` we produce a pair where the first component
+represents whether the value is `is<` and the second whether the value
+is `is=`.
+
+```
+R-to-𝔹² : R → 𝔹²
+R-to-𝔹² is< = (𝕥 , 𝕗)
+R-to-𝔹² is= = (𝕗 , 𝕥)
+R-to-𝔹² is> = (𝕗 , 𝕗)
+```
+
+There are 4 values that can be represented by a pair of booleans, so
+one will necessarily not appear on the right hand side of this
+definition. Using the representation we have chosen it is cleary `(𝕥 ,
+𝕥)`. Fortunately, this value would be meaningless since two numbers
+cannot both be less-than and equal to each other. Nevertheless, the
+redundancy of the `B²` type in representing `R` values does not sit
+well with me, and seems inelegant. Perhaps this could be improved.
+
+We want `R-to-𝔹²` to be invertible but this leads us to the question
+of what we should do with the input `(𝕥 , 𝕥)`. One choice is that it
+represents `is<` if we slightly modify the meaning of the pair of
+booleans to mean that the second component only has a meaning if the
+first component is `𝕗`. This leads to this definition:
+
+
+    𝔹²-to-R :  𝔹² → R
+    𝔹²-to-R (𝕥 , _) = is<
+    𝔹²-to-R (𝕗 , 𝕥) = is=
+    𝔹²-to-R (𝕗 , 𝕗) = is>
+
+
+Unfortunately this means that the function is not invertible in one direction, since the
+following is true.
+
+    (R-to-𝔹² ∘ 𝔹²-to-R) (𝕥 , 𝕥) = (𝕥 , 𝕗)
+
+Thus we cannot prove that `R-to-𝔹² ∘ 𝔹²-to-R ≗ id`
+
+I suspect this is going to bite us, and pretty soon, but since I don't
+know how to solve this problem we will press on.
+
+
+Next we define `F𝟚-to-𝔹` and `𝔹-to­𝔽2` as follows:
+```
+F𝟚-to-𝔹 : 𝔽 2 → 𝔹
+F𝟚-to-𝔹 zero       = 𝕗
+F𝟚-to-𝔹 (suc zero) = 𝕥
+
+𝔹-to-𝔽2 : 𝔹 → 𝔽 2
+𝔹-to-𝔽2 𝕗 = zero
+𝔹-to-𝔽2 𝕥 = suc zero
+```
+
+We can now sketch the commutative diagram that must be satisfied:
+
+
+        R × 𝔽² (2 , 2) --- 𝔽-compareᶜ ---> R
+              ^                            ^
+              |                            |
+       𝔹²-to-R ⊗ 𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2     𝔹²-to-R
+              |                            |
+           𝔹² × B² ------- compareᶜ ------> 𝔹²
