@@ -203,12 +203,28 @@ between the two.
 ℕ-compare (zero , suc _)   = is<
 ℕ-compare (suc _ , zero)   = is>
 ℕ-compare (suc m , suc n)  = ℕ-compare (m , n)
+```
 
+        ℕ² --- ℕ-compare ----> R
+        ^                      ^
+        |                      |
+       toℕ²                    id
+        |                      |
+       𝔽 i,j --- 𝔽-compare --> R
+
+```
 toℕ²-ℕ-compare : {i,j : ℕ²} → 𝔽-compare {i,j} ≗ ℕ-compare ∘ toℕ²
 toℕ²-ℕ-compare (zero  , zero)  = refl
 toℕ²-ℕ-compare (zero  , suc _) = refl
 toℕ²-ℕ-compare (suc _ , zero)  = refl
 toℕ²-ℕ-compare (suc m , suc n) = toℕ²-ℕ-compare (m , n)
+```
+
+We package this up as a SIM Proof as follows:
+
+```
+𝔽-compare⇉ : {i,j : ℕ²} → toℕ² {i,j} ⇉ id
+𝔽-compare⇉  = arr 𝔽-compare ℕ-compare toℕ²-ℕ-compare
 ```
 
 We are now finally in a position to define a comparison function
@@ -247,7 +263,7 @@ Here is the definition of `𝔽-compareᶜ`.
 𝔽-compareᶜ : {k : ℕ} → 𝔽Cⁱ k → R
 𝔽-compareᶜ (is< , _ , _) = is<
 𝔽-compareᶜ (is= , m , n) = 𝔽-compare (m , n)
-𝔽-compareᶜ (is> , m , n) = is>
+𝔽-compareᶜ (is> , _ , _) = is>
 ```
 
 What does comparison-with-carry look like on natural numbers? It
@@ -323,7 +339,7 @@ It should satisfy the following commutative diagram:
 In code:
 
 ```
-is-compare : { ρ τ : Set } {k : ℕ} (ν : ρ → R) (μ : τ → 𝔽 k) (compareᶜ : τCⁱ ρ τ → ρ) → Set
+is-compare : {ρ τ : Set} {k : ℕ} (ν : ρ → R) (μ : τ → 𝔽 k) (compareᶜ : τCⁱ ρ τ → ρ) → Set
 is-compare ν μ compareᶜ = ν ∘ compareᶜ ≗ 𝔽-compareᶜ ∘ (ν ⊗ μ ⊗ μ)
 ```
 
@@ -437,10 +453,10 @@ We can now sketch the commutative diagram that must be satisfied:
 
 
 In fact, this will serve as a definition even though it may not be all that efficient.
-
+q
 ```
-compareB₀ : 𝔹² × 𝔹² → 𝔹²
-compareB₀ = R-to-𝔹² ∘ 𝔽-compareᶜ ∘ (𝔹²-to-R  ⊗ 𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2)
+𝔹-compareᶜ₀ : 𝔹² × 𝔹² → 𝔹²
+𝔹-compareᶜ₀ = R-to-𝔹² ∘ 𝔽-compareᶜ ∘ (𝔹²-to-R  ⊗ 𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2)
 ```
 
 
@@ -449,11 +465,11 @@ Now to prove that this definition is correct.
 
 ```
 comparisonB₀ : Comparison 𝔹²-to-R 𝔹-to-𝔽2
-comparisonB₀ = compareB₀ ⊣ isB
+comparisonB₀ = 𝔹-compareᶜ₀ ⊣ isB
   where
-    isB : is-compare 𝔹²-to-R 𝔹-to-𝔽2 compareB₀
+    isB : is-compare 𝔹²-to-R 𝔹-to-𝔽2 𝔹-compareᶜ₀
     isB (cᵢ , a , b) = begin
-        𝔹²-to-R (compareB₀ (cᵢ , a , b))
+        𝔹²-to-R (𝔹-compareᶜ₀ (cᵢ , a , b))
       ≡⟨⟩
         𝔹²-to-R (R-to-𝔹² (𝔽-compareᶜ (𝔹²-to-R  cᵢ , 𝔹-to-𝔽2 a ,  𝔹-to-𝔽2 b)))
       ≡⟨ 𝔹²-to-R∘R-to-𝔹²≗id (𝔽-compareᶜ (𝔹²-to-R  cᵢ , 𝔹-to-𝔽2 a ,  𝔹-to-𝔽2 b)) ⟩
@@ -465,34 +481,112 @@ comparisonB₀ = compareB₀ ⊣ isB
 
 This was as expected. Now let's look at a more efficient solution.
 
+----
+
+
+We will first want a function `𝔹-compare` which is a refinement of
+`𝔽-compare` (not `𝔽-compareᶜ`). This is hinted at by the use of
+`𝔽-compare` within the definition of `𝔽-compareᶜ`.
+
+
+
+       𝔽 2,2 --- 𝔽-compare --> R
+        ^                      ^
+        |                      |
+ 𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2          𝔹²-to-R
+        |                      |
+       𝔹² ----- 𝔹-compare ---> 𝔹²
+
+
+We do a simple case analysis on `𝔽-compare` along with the following,
+machine-checked, facts to yield a preliminary definition for
+`𝔹-compare`.
+
 ```
-compareB : 𝔹² × 𝔹² → 𝔹²
-compareB ((is<′ , is=′) , a , b) with is<′
+𝕗-is-zero : 𝔹-to-𝔽2 𝕗 ≡ zero
+𝕗-is-zero = refl
+
+𝕥-is-one : 𝔹-to-𝔽2 𝕥 ≡ suc zero
+𝕥-is-one = refl
+
+𝔹-compare₀ : 𝔹² → 𝔹²
+𝔹-compare₀ (𝕗 , 𝕗) = R-to-𝔹² is=
+𝔹-compare₀ (𝕗 , 𝕥) = R-to-𝔹² is<
+𝔹-compare₀ (𝕥 , 𝕗) = R-to-𝔹² is>
+𝔹-compare₀ (𝕥 , 𝕥) = 𝔹-compare₀ (𝕗 , 𝕗)
+```
+
+[Conal, I'm disatisfied with this because it feels like I did my equational reasoning "outside"
+ of Agda. Is there are a way to do equational reasoning involving pattern matching inside Agda?]
+
+Simplifying, this yields
+
+```
+𝔹-compare₁ : 𝔹² → 𝔹²
+𝔹-compare₁ (𝕗 , 𝕗) = (𝕗 , 𝕥)
+𝔹-compare₁ (𝕗 , 𝕥) = (𝕥 , 𝕗)
+𝔹-compare₁ (𝕥 , 𝕗) = (𝕗 , 𝕗)
+𝔹-compare₁ (𝕥 , 𝕥) = (𝕗 , 𝕥)
+```
+
+This can be simplified to use the "fork" operator `▵`.
+
+```
+𝔹-compare₂ : 𝔹² → 𝔹²
+𝔹-compare₂ = comp-fst ▵ comp-snd
+  where
+    comp-fst : 𝔹² → 𝔹
+    comp-fst (𝕗 , 𝕗) = 𝕗
+    comp-fst (𝕗 , 𝕥) = 𝕥
+    comp-fst (𝕥 , 𝕗) = 𝕗
+    comp-fst (𝕥 , 𝕥) = 𝕗
+
+    comp-snd : 𝔹² → 𝔹
+    comp-snd (𝕗 , 𝕗) = 𝕥
+    comp-snd (𝕗 , 𝕥) = 𝕗
+    comp-snd (𝕥 , 𝕗) = 𝕗
+    comp-snd (𝕥 , 𝕥) = 𝕥
+```
+
+
+We now use our knowledge of boolean function primitives and the "truth table" evident
+in the definition above to yield:
+
+```
+𝔹-compare : 𝔹² → 𝔹²
+𝔹-compare = (∧ ∘ first not) ▵ (not ∘ xor)
+```
+
+We are now in a position to define a boolean comparison-with-carry function.
+
+```
+𝔹-compareᶜ : 𝔹² × 𝔹² → 𝔹²
+𝔹-compareᶜ ((is<′ , is=′) , a , b) with is<′
 ... | 𝕥 = (𝕥 , 𝕗)
 ... | 𝕗 with is=′
 ...       | 𝕗 = (𝕗 , 𝕗)
-...       | 𝕥 = (∧ (not a , b) , not (xor (a , b)))
-
-comparisonB : Comparison 𝔹²-to-R 𝔹-to-𝔽2
-comparisonB = compareB ⊣ isB
-  where
-    isB : is-compare 𝔹²-to-R 𝔹-to-𝔽2 compareB
-    isB = λ { ((𝕗 , 𝕗) , 𝕗 , 𝕗) → refl
-            ; ((𝕗 , 𝕗) , 𝕗 , 𝕥) → refl
-            ; ((𝕗 , 𝕗) , 𝕥 , 𝕗) → refl
-            ; ((𝕗 , 𝕗) , 𝕥 , 𝕥) → refl
-            ; ((𝕗 , 𝕥) , 𝕗 , 𝕗) → refl
-            ; ((𝕗 , 𝕥) , 𝕗 , 𝕥) → refl
-            ; ((𝕗 , 𝕥) , 𝕥 , 𝕗) → refl
-            ; ((𝕗 , 𝕥) , 𝕥 , 𝕥) → refl
-            ; ((𝕥 , 𝕗) , 𝕗 , 𝕗) → refl
-            ; ((𝕥 , 𝕗) , 𝕗 , 𝕥) → refl
-            ; ((𝕥 , 𝕗) , 𝕥 , 𝕗) → refl
-            ; ((𝕥 , 𝕗) , 𝕥 , 𝕥) → refl
-            ; ((𝕥 , 𝕥) , 𝕗 , 𝕗) → refl
-            ; ((𝕥 , 𝕥) , 𝕗 , 𝕥) → refl
-            ; ((𝕥 , 𝕥) , 𝕥 , 𝕗) → refl
-            ; ((𝕥 , 𝕥) , 𝕥 , 𝕥) → refl }
-      where
-        open ≡-Reasoning
+...       | 𝕥 = 𝔹-compare (a , b)
 ```
+
+```
+comparisonB : Comparison 𝔹²-to-R 𝔹-to-𝔽2
+comparisonB = 𝔹-compareᶜ ⊣ isB
+  where
+    isB : is-compare 𝔹²-to-R 𝔹-to-𝔽2 𝔹-compareᶜ
+    isB = p
+      where
+        q :  𝔹²-to-R ∘ 𝔹-compare ≗ 𝔽-compare ∘ (𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2)
+        q (𝕗 , 𝕗) = refl
+        q (𝕗 , 𝕥) = refl
+        q (𝕥 , 𝕗) = refl
+        q (𝕥 , 𝕥) = refl
+
+        p : 𝔹²-to-R ∘ 𝔹-compareᶜ ≗ 𝔽-compareᶜ ∘ (𝔹²-to-R ⊗ 𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2)
+        p ((is<′ , is=′) , a , b) with is<′
+        ... | 𝕥  = refl
+        ... | 𝕗 with is=′
+        ...       | 𝕗 = refl
+        ...       | 𝕥 = q (a , b)
+```
+
+Let's see if we can get a circuit diagram for this.
