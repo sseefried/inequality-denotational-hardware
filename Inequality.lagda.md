@@ -560,13 +560,31 @@ in the definition above to yield:
 We are now in a position to define a boolean comparison-with-carry function.
 
 ```
-𝔹-compareᶜ : 𝔹² × 𝔹² → 𝔹²
-𝔹-compareᶜ ((is<′ , is=′) , a , b) with is<′
+𝔹-compareᶜ₁ : 𝔹² × 𝔹² → 𝔹²
+𝔹-compareᶜ₁ ((is<′ , is=′) , a , b) with is<′
 ... | 𝕥 = (𝕥 , 𝕗)
 ... | 𝕗 with is=′
 ...       | 𝕗 = (𝕗 , 𝕗)
 ...       | 𝕥 = 𝔹-compare (a , b)
 ```
+
+
+
+```
+𝔹-compareᶜ : 𝔹² × 𝔹² → 𝔹²
+𝔹-compareᶜ ((𝕗 , 𝕗) , a,b) = (𝕗 , 𝕗)
+𝔹-compareᶜ ((𝕗 , 𝕥) , a,b) = 𝔹-compare a,b
+𝔹-compareᶜ ((𝕥 , 𝕗) , a,b) = (𝕥 , 𝕗)
+𝔹-compareᶜ ((𝕥 , 𝕥) , a,b) = (𝕥 , 𝕗)
+```
+
+It seems I always end up playing a game where I go from an explicit
+"truth table" style definition down to some combination of the
+primitive gates.
+
+Would the idea be to create a "solver" of some kind that guarantees to
+give us the minimum number of gates? This whole sub-problem seems like
+one that, if solved, would be immensely reusable.
 
 ```
 comparisonB : Comparison 𝔹²-to-R 𝔹-to-𝔽2
@@ -582,11 +600,10 @@ comparisonB = 𝔹-compareᶜ ⊣ isB
         q (𝕥 , 𝕥) = refl
 
         p : 𝔹²-to-R ∘ 𝔹-compareᶜ ≗ 𝔽-compareᶜ ∘ (𝔹²-to-R ⊗ 𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2)
-        p ((is<′ , is=′) , a , b) with is<′
-        ... | 𝕥  = refl
-        ... | 𝕗 with is=′
-        ...       | 𝕗 = refl
-        ...       | 𝕥 = q (a , b)
+        p ((𝕗 , 𝕗) , a,b) = refl
+        p ((𝕗 , 𝕥) , a,b) = q a,b
+        p ((𝕥 , 𝕗) , a,b) = refl
+        p ((𝕥 , 𝕥) , a,b) = refl
 ```
 
 Let's see if we can get a circuit diagram for this.
