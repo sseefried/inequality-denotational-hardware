@@ -4,23 +4,18 @@
 ```
 module Inequality where
 
-open import Level using (0ℓ)
 open import Relation.Binary.Core using (Rel)
 open import Data.Bool renaming (Bool to 𝔹) hiding (_≤_;not;_∧_)
 open import Data.Nat hiding (_≤_ ; _≤ᵇ_)
 import Data.Nat as ℕ
 open import Data.Product using (_,_)
-
-open import Function.Base using (_on_)
 open import Data.Fin renaming (Fin to 𝔽) hiding (_≤_; _+_)
 import Data.Nat.Properties
-
 open import Relation.Binary.PropositionalEquality
-
+open import Categorical.Raw using (xor)
 open import Categorical.Homomorphism hiding (true; false; refl; sym)
 open import Functions
 open import Categorical.Arrow Function renaming (mk to arr; _⇨_ to _⇛_) ; open _⇛_
-
 ```
 -->
 
@@ -306,28 +301,30 @@ function that uses bit vectors. But let's _not_ be hasty. To avoid this
 we can abstract over the notion of comparison-with-carry.
 
 Using a similar idea from Conal's "Adders and Arrows" note, we replace
-the representation type, `𝔽 k`, with an arbitrary representation type `τ`
-and introduce a meaning function `μ : τ → 𝔽 k` for some `k : ℕ`.
+the representation type, `𝔽 k`, with an arbitrary representation type
+`τ` and introduce a meaning function `μ : τ → 𝔽 k` for some `k :
+ℕ`. In addition we also abstract over the represention type of `R` calling it `ρ`
+and introducing another meaning function `ν : ρ → R`.
 
 ```
-τCⁱ : Set → Set
-τCⁱ τ =  R × τ × τ
+τCⁱ : Set → Set → Set
+τCⁱ ρ τ =  ρ × τ × τ
 ```
 
 It should satisfy the following commutative diagram:
 
       𝔽Cⁱ k -- 𝔽-compareᶜ --> R
-        ^                    ^
-        |                    |
-    id ⊗ μ ⊗ μ               id
-        |                    |
-      τCⁱ k --- compareᶜ ---> R
+        ^                     ^
+        |                     |
+     ν ⊗ μ ⊗ μ                ν
+        |                     |
+      τCⁱ k --- compareᶜ ---> ρ
 
 In code:
 
 ```
-is-compare : { τ : Set } {k : ℕ} (μ : τ → 𝔽 k) (compareᶜ : τCⁱ τ → R) → Set
-is-compare μ compareᶜ = compareᶜ ≗ 𝔽-compareᶜ ∘ (id ⊗ μ ⊗ μ)
+is-compare : { ρ τ : Set } {k : ℕ} (ν : ρ → R) (μ : τ → 𝔽 k) (compareᶜ : τCⁱ ρ τ → ρ) → Set
+is-compare ν μ compareᶜ = ν ∘ compareᶜ ≗ 𝔽-compareᶜ ∘ (ν ⊗ μ ⊗ μ)
 ```
 
 Let's now package `compareᶜ` functions along with proofs that they are valid
@@ -335,26 +332,26 @@ refinements of `𝔽-compareᶜ`.
 
 ```
 infix 1 _⊣_
-record Comparison {τ : Set} {k : ℕ} (μ : τ → 𝔽 k) : Set where
+record Comparison {ρ τ : Set} {k : ℕ} (ν : ρ → R) (μ : τ → 𝔽 k) : Set where
   constructor _⊣_
   field
-    compareᶜ : τCⁱ τ → R
-    is : is-compare μ compareᶜ
+    compareᶜ : τCⁱ ρ τ → ρ
+    is : is-compare ν μ compareᶜ
 ```
 
 We can now define a SIM proof _generator_ that, given a value of type `Comparison μ`
 yields a SIM proof satisfying the commutative diagram above.
 
 ```
-mk-compareᶜ⇉ : {τ : Set} {k : ℕ} {μ : τ → 𝔽 k} → Comparison μ → id ⊗ μ ⊗ μ ⇉ id
+mk-compareᶜ⇉ : {ρ τ : Set} {k : ℕ} {ν : ρ → R} {μ : τ → 𝔽 k} → Comparison ν μ → ν ⊗ μ ⊗ μ ⇉ ν
 mk-compareᶜ⇉ (compareᶜ ⊣ is) = arr compareᶜ 𝔽-compareᶜ is
 ```
 
 A SIM proof generator for the entire commutative tower is given below.
 
 ```
-mk-tower⇉ : {τ : Set} {k : ℕ} {μ : τ → 𝔽 k} →
-  Comparison μ → (id ⊗ toℕ²) ∘ (id ⊗ μ ⊗ μ) ⇉ id
+mk-tower⇉ : {ρ τ : Set} {k : ℕ} {ν : ρ → R} {μ : τ → 𝔽 k} →
+  Comparison ν μ → (id ⊗ toℕ²) ∘ (ν ⊗ μ ⊗ μ) ⇉ ν
 mk-tower⇉ comparison = 𝔽-compareᶜ⇉ ◎ mk-compareᶜ⇉ comparison
 ```
 
@@ -391,11 +388,12 @@ booleans to mean that the second component only has a meaning if the
 first component is `𝕗`. This leads to this definition:
 
 
-    𝔹²-to-R :  𝔹² → R
-    𝔹²-to-R (𝕥 , _) = is<
-    𝔹²-to-R (𝕗 , 𝕥) = is=
-    𝔹²-to-R (𝕗 , 𝕗) = is>
-
+```
+𝔹²-to-R :  𝔹² → R
+𝔹²-to-R (𝕥 , _) = is<
+𝔹²-to-R (𝕗 , 𝕥) = is=
+𝔹²-to-R (𝕗 , 𝕗) = is>
+```
 
 Unfortunately this means that the function is not invertible in one direction, since the
 following is true.
@@ -419,6 +417,14 @@ F𝟚-to-𝔹 (suc zero) = 𝕥
 𝔹-to-𝔽2 𝕥 = suc zero
 ```
 
+```
+𝔹²-to-R∘R-to-𝔹²≗id : 𝔹²-to-R ∘ R-to-𝔹² ≗ id
+𝔹²-to-R∘R-to-𝔹²≗id x with x
+... | is< = refl
+... | is= = refl
+... | is> = refl
+```
+
 We can now sketch the commutative diagram that must be satisfied:
 
 
@@ -428,3 +434,65 @@ We can now sketch the commutative diagram that must be satisfied:
        𝔹²-to-R ⊗ 𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2     𝔹²-to-R
               |                            |
            𝔹² × B² ------- compareᶜ ------> 𝔹²
+
+
+In fact, this will serve as a definition even though it may not be all that efficient.
+
+```
+compareB₀ : 𝔹² × 𝔹² → 𝔹²
+compareB₀ = R-to-𝔹² ∘ 𝔽-compareᶜ ∘ (𝔹²-to-R  ⊗ 𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2)
+```
+
+
+Now to prove that this definition is correct.
+
+
+```
+comparisonB₀ : Comparison 𝔹²-to-R 𝔹-to-𝔽2
+comparisonB₀ = compareB₀ ⊣ isB
+  where
+    isB : is-compare 𝔹²-to-R 𝔹-to-𝔽2 compareB₀
+    isB (cᵢ , a , b) = begin
+        𝔹²-to-R (compareB₀ (cᵢ , a , b))
+      ≡⟨⟩
+        𝔹²-to-R (R-to-𝔹² (𝔽-compareᶜ (𝔹²-to-R  cᵢ , 𝔹-to-𝔽2 a ,  𝔹-to-𝔽2 b)))
+      ≡⟨ 𝔹²-to-R∘R-to-𝔹²≗id (𝔽-compareᶜ (𝔹²-to-R  cᵢ , 𝔹-to-𝔽2 a ,  𝔹-to-𝔽2 b)) ⟩
+        (𝔽-compareᶜ (𝔹²-to-R cᵢ ,  𝔹-to-𝔽2 a , 𝔹-to-𝔽2 b))
+      ∎
+      where
+        open ≡-Reasoning
+```
+
+This was as expected. Now let's look at a more efficient solution.
+
+```
+compareB : 𝔹² × 𝔹² → 𝔹²
+compareB ((is<′ , is=′) , a , b) with is<′
+... | 𝕥 = (𝕥 , 𝕗)
+... | 𝕗 with is=′
+...       | 𝕗 = (𝕗 , 𝕗)
+...       | 𝕥 = (∧ (not a , b) , not (xor (a , b)))
+
+comparisonB : Comparison 𝔹²-to-R 𝔹-to-𝔽2
+comparisonB = compareB ⊣ isB
+  where
+    isB : is-compare 𝔹²-to-R 𝔹-to-𝔽2 compareB
+    isB = λ { ((𝕗 , 𝕗) , 𝕗 , 𝕗) → refl
+            ; ((𝕗 , 𝕗) , 𝕗 , 𝕥) → refl
+            ; ((𝕗 , 𝕗) , 𝕥 , 𝕗) → refl
+            ; ((𝕗 , 𝕗) , 𝕥 , 𝕥) → refl
+            ; ((𝕗 , 𝕥) , 𝕗 , 𝕗) → refl
+            ; ((𝕗 , 𝕥) , 𝕗 , 𝕥) → refl
+            ; ((𝕗 , 𝕥) , 𝕥 , 𝕗) → refl
+            ; ((𝕗 , 𝕥) , 𝕥 , 𝕥) → refl
+            ; ((𝕥 , 𝕗) , 𝕗 , 𝕗) → refl
+            ; ((𝕥 , 𝕗) , 𝕗 , 𝕥) → refl
+            ; ((𝕥 , 𝕗) , 𝕥 , 𝕗) → refl
+            ; ((𝕥 , 𝕗) , 𝕥 , 𝕥) → refl
+            ; ((𝕥 , 𝕥) , 𝕗 , 𝕗) → refl
+            ; ((𝕥 , 𝕥) , 𝕗 , 𝕥) → refl
+            ; ((𝕥 , 𝕥) , 𝕥 , 𝕗) → refl
+            ; ((𝕥 , 𝕥) , 𝕥 , 𝕥) → refl }
+      where
+        open ≡-Reasoning
+```
