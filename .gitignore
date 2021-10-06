@@ -5,3 +5,8 @@ latex/*.log
 latex/*.out
 latex/inequality.pdf
 latex/*.xdv
+MAlonzo/
+Inequality
+Figures/*.dot
+Figures/*.ssa
+Figures/*.pdf

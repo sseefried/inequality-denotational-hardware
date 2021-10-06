@@ -1,11 +1,12 @@
-<!-- -*-agda2-*- -->
+!-- -*-agda2-*- -->
 
 <!--
 ```
+{-# OPTIONS --guardedness #-}  -- For tesing/IO
 module Inequality where
 
 open import Relation.Binary.Core using (Rel)
-open import Data.Bool renaming (Bool to 𝔹) hiding (_≤_;not;_∧_)
+open import Data.Bool renaming (Bool to 𝔹) hiding (_≤_;not;_∧_; true; false)
 open import Data.Nat hiding (_≤_ ; _≤ᵇ_)
 import Data.Nat as ℕ
 open import Data.Product using (_,_)
@@ -13,7 +14,7 @@ open import Data.Fin renaming (Fin to 𝔽) hiding (_≤_; _+_)
 import Data.Nat.Properties
 open import Relation.Binary.PropositionalEquality
 open import Categorical.Raw using (xor)
-open import Categorical.Homomorphism hiding (true; false; refl; sym)
+open import Categorical.Homomorphism hiding (refl; sym)
 open import Functions
 open import Categorical.Arrow Function renaming (mk to arr; _⇨_ to _⇛_) ; open _⇛_
 ```
@@ -38,8 +39,8 @@ clarity.
 
 ```
 ℕ≤ : ℕ² → 𝔹
-ℕ≤ (zero , _)      = true
-ℕ≤ (suc m , zero)  = false
+ℕ≤ (zero , _)      = 𝕥
+ℕ≤ (suc m , zero)  = 𝕗
 ℕ≤ (suc m , suc n) = ℕ≤ (m , n)
 ```
 
@@ -121,14 +122,14 @@ operators for both `ℕ` and `𝔽`.
 
 ```
 𝔽< : {i,j : ℕ²} → 𝔽² i,j → 𝔹
-𝔽< (zero  , suc _) = true
-𝔽< (_     , zero ) = false
+𝔽< (zero  , suc _) = 𝕥
+𝔽< (_     , zero ) = 𝕗
 𝔽< (suc m , suc n)= 𝔽< (m , n)
 
 𝔽= : {i,j : ℕ²} → 𝔽² i,j → 𝔹
-𝔽= (zero  , zero ) = true
-𝔽= (zero  , suc _) = false
-𝔽= (suc _ , zero ) = false
+𝔽= (zero  , zero ) = 𝕥
+𝔽= (zero  , suc _) = 𝕗
+𝔽= (suc _ , zero ) = 𝕗
 𝔽= (suc m , suc n) = 𝔽= (m , n)
 ```
 
@@ -571,20 +572,47 @@ We are now in a position to define a boolean comparison-with-carry function.
 
 
 ```
-𝔹-compareᶜ : 𝔹² × 𝔹² → 𝔹²
-𝔹-compareᶜ ((𝕗 , 𝕗) , a,b) = (𝕗 , 𝕗)
-𝔹-compareᶜ ((𝕗 , 𝕥) , a,b) = 𝔹-compare a,b
-𝔹-compareᶜ ((𝕥 , 𝕗) , a,b) = (𝕥 , 𝕗)
-𝔹-compareᶜ ((𝕥 , 𝕥) , a,b) = (𝕥 , 𝕗)
+𝔹-compareᶜ₂ : 𝔹² × 𝔹² → 𝔹²
+𝔹-compareᶜ₂ ((𝕗 , 𝕗) , a,b) = (𝕗 , 𝕗)
+𝔹-compareᶜ₂ ((𝕗 , 𝕥) , a,b) = 𝔹-compare a,b
+𝔹-compareᶜ₂ ((𝕥 , 𝕗) , a,b) = (𝕥 , 𝕗)
+𝔹-compareᶜ₂ ((𝕥 , 𝕥) , a,b) = (𝕥 , 𝕗)
 ```
 
-It seems I always end up playing a game where I go from an explicit
+[It seems I always end up playing a game where I go from an explicit
 "truth table" style definition down to some combination of the
 primitive gates.
 
 Would the idea be to create a "solver" of some kind that guarantees to
 give us the minimum number of gates? This whole sub-problem seems like
-one that, if solved, would be immensely reusable.
+one that, if solved, would be immensely reusable.]
+
+Let's fully expand the truth table.
+
+```
+𝔹-compareᶜ₃ : 𝔹² × 𝔹² → 𝔹²
+𝔹-compareᶜ₃ ((𝕗 , 𝕗) , a,b) = (𝕗 , 𝕗)
+𝔹-compareᶜ₃ ((𝕗 , 𝕥) , a,b) = 𝔹-compare a,b
+𝔹-compareᶜ₃ ((𝕥 , 𝕗) , a,b) = (𝕥 , 𝕗)
+𝔹-compareᶜ₃ ((𝕥 , 𝕥) , a,b) = (𝕥 , 𝕗)
+```
+
+```
+𝔹-compareᶜ : 𝔹² × 𝔹²  → 𝔹²
+𝔹-compareᶜ =  cond ∘ (c₁ ▵ ((cond ∘ (c₂ ▵ (tru ▵ fls) ▵ (𝔹-compare ∘ exr))) ▵ (fls ▵ fls)))
+  where
+     c₁ :  𝔹² × 𝔹² → 𝔹
+     c₁ = ∧ ∘ (not ⊗ not) ∘ exl
+
+     c₂ : 𝔹² × 𝔹² → 𝔹
+     c₂ = ∧ ∘ (not ⊗ id) ∘ exl
+
+     fls : {a : Set} → a → 𝔹
+     fls _ = 𝕗
+
+     tru : {a : Set} → a → 𝔹
+     tru _ = 𝕥
+```
 
 ```
 comparisonB : Comparison 𝔹²-to-R 𝔹-to-𝔽2
@@ -604,6 +632,81 @@ comparisonB = 𝔹-compareᶜ ⊣ isB
         p ((𝕗 , 𝕥) , a,b) = q a,b
         p ((𝕥 , 𝕗) , a,b) = refl
         p ((𝕥 , 𝕥) , a,b) = refl
+
 ```
+## Circuit diagrams
+
 
 Let's see if we can get a circuit diagram for this.
+
+```
+open import Ty
+open import Categorical.Free.Homomorphism Function renaming (_⇨_ to _↦_)
+
+open import Categorical.Homomorphism
+  renaming ( refl to ≈refl; trans to ≈trans; sym to ≈sym
+           ; Bool to 𝔹̂; ∧ to ⟨∧⟩; ∨ to ⟨∨⟩; xor to ⟨⊕⟩
+           )
+
+τĈⁱ : Ty → Ty → Ty
+τĈⁱ ρ τ =  ρ × τ × τ
+
+Ĉ : Ty → Ty → Set
+Ĉ ρ τ = τĈⁱ ρ τ ↦ ρ
+
+𝔹̂² : Ty
+𝔹̂² = 𝔹̂ × 𝔹̂
+```
+
+```
+𝔹-compareC : 𝔹̂² ↦ 𝔹̂²
+𝔹-compareC = (∧ ∘ first not) ▵ (not ∘ xor)
+
+𝔹-compareᶜC : Ĉ (𝔹̂ × 𝔹̂) 𝔹̂
+𝔹-compareᶜC = cond ∘ (c₁ ▵ ((cond ∘ (c₂ ▵ (tru ▵ fls) ▵ (𝔹-compareC ∘ exr))) ▵ (fls ▵ fls)))
+  where
+     c₁ :  𝔹̂² × 𝔹̂² ↦ 𝔹̂
+     c₁ = ∧ ∘ (not ⊗ not) ∘ exl
+
+     c₂ : 𝔹̂² × 𝔹̂² ↦ 𝔹̂
+     c₂ = ∧ ∘ (not ⊗ id) ∘ exl
+
+     fls : {a : Ty} → a ↦ 𝔹̂
+     fls  = false ∘ !
+
+     tru : {a : Ty} → a ↦ 𝔹̂
+     tru = true ∘ !
+```
+
+```
+Fₘ-𝔹-compareᶜC : Fₘ 𝔹-compareᶜC ≡ 𝔹-compareᶜ
+Fₘ-𝔹-compareᶜC  = refl
+```
+
+
+```
+
+
+open import Level using (0ℓ)
+open import IO
+open import Data.String
+
+open import Primitive.Raw Function renaming (_⇨_ to _⇨ₚ_)
+open import Routing.Raw renaming (_⇨_ to _⇨ᵣ_)
+open import Linearize.Raw Function _⇨ₚ_ _⇨ᵣ_ renaming (_⇨_ to _↠_)
+
+import Categorical.Free.Homomorphism _↠_ as FL
+import Test as T
+
+example′ : ∀ {ρ τ : Ty}
+         → String → (c : Ĉ ρ τ) → IO {0ℓ} _
+example′ name c = T.example name (Fₘ c)
+
+-- example : ∀ {σ : Ty}{m}{μ : Fₒ σ → 𝔽 m}{adder : Adder μ}
+--         → String → AdderC {σ} adder → IO {0ℓ} _
+-- example name f = example′ name (circuit f)
+
+main = run do
+  example′ "boolean-compare-with-carry" 𝔹-compareᶜC
+
+```
