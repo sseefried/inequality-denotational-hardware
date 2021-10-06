@@ -685,8 +685,6 @@ Fₘ-𝔹-compareᶜC  = refl
 
 
 ```
-
-
 open import Level using (0ℓ)
 open import IO
 open import Data.String
@@ -702,11 +700,6 @@ example′ : ∀ {ρ τ : Ty}
          → String → (c : Ĉ ρ τ) → IO {0ℓ} _
 example′ name c = T.example name (Fₘ c)
 
--- example : ∀ {σ : Ty}{m}{μ : Fₒ σ → 𝔽 m}{adder : Adder μ}
---         → String → AdderC {σ} adder → IO {0ℓ} _
--- example name f = example′ name (circuit f)
-
 main = run do
   example′ "boolean-compare-with-carry" 𝔹-compareᶜC
-
 ```
