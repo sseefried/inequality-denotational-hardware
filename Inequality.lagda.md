@@ -7,16 +7,21 @@ module Inequality where
 
 open import Relation.Binary.Core using (Rel)
 open import Data.Bool renaming (Bool to 𝔹) hiding (_≤_;not;_∧_; true; false)
-open import Data.Nat hiding (_≤_ ; _≤ᵇ_)
+open import Data.Bool.Properties
+open import Data.Nat hiding (_≤_ ; _≤ᵇ_;_≟_; compare)
 import Data.Nat as ℕ
+open import Data.Unit using (tt)
+open import Data.Empty
 open import Data.Product using (_,_)
-open import Data.Fin renaming (Fin to 𝔽) hiding (_≤_; _+_)
+open import Data.Fin renaming (Fin to 𝔽) hiding (_≤_; _+_;_≟_;compare)
 import Data.Nat.Properties
 open import Relation.Binary.PropositionalEquality
 open import Categorical.Raw using (xor)
 open import Categorical.Homomorphism hiding (refl; sym)
 open import Functions
 open import Categorical.Arrow Function renaming (mk to arr; _⇨_ to _⇛_) ; open _⇛_
+open import Relation.Nullary
+open import Relation.Nullary.Decidable
 ```
 -->
 
@@ -46,7 +51,7 @@ clarity.
 
 As it turns out there is no equivalent definition of a `_≤ᵇ_` operator in the
 Standard Library's `Data.Fin` module. However, `_≤_` is defined as a
-_type synonym_ as follows:
+v_type synonym_ as follows:
 
 
     _≤_ : ∀ {n} → Rel (Fin n) 0ℓ
@@ -340,8 +345,8 @@ It should satisfy the following commutative diagram:
 In code:
 
 ```
-is-compare : {ρ τ : Set} {k : ℕ} (ν : ρ → R) (μ : τ → 𝔽 k) (compareᶜ : τCⁱ ρ τ → ρ) → Set
-is-compare ν μ compareᶜ = ν ∘ compareᶜ ≗ 𝔽-compareᶜ ∘ (ν ⊗ μ ⊗ μ)
+is-compare-with-carry : {ρ τ : Set} {k : ℕ} (ν : ρ → R) (μ : τ → 𝔽 k) (compareᶜ : τCⁱ ρ τ → ρ) → Set
+is-compare-with-carry ν μ compareᶜ = ν ∘ compareᶜ ≗ 𝔽-compareᶜ ∘ (ν ⊗ μ ⊗ μ)
 ```
 
 Let's now package `compareᶜ` functions along with proofs that they are valid
@@ -349,18 +354,18 @@ refinements of `𝔽-compareᶜ`.
 
 ```
 infix 1 _⊣_
-record Comparison {ρ τ : Set} {k : ℕ} (ν : ρ → R) (μ : τ → 𝔽 k) : Set where
+record ComparisonWithCarry {ρ τ : Set} {k : ℕ} (ν : ρ → R) (μ : τ → 𝔽 k) : Set where
   constructor _⊣_
   field
     compareᶜ : τCⁱ ρ τ → ρ
-    is : is-compare ν μ compareᶜ
+    is : is-compare-with-carry ν μ compareᶜ
 ```
 
-We can now define a SIM proof _generator_ that, given a value of type `Comparison μ`
+We can now define a SIM proof _generator_ that, given a value of type `ComparisonWithCarry μ`
 yields a SIM proof satisfying the commutative diagram above.
 
 ```
-mk-compareᶜ⇉ : {ρ τ : Set} {k : ℕ} {ν : ρ → R} {μ : τ → 𝔽 k} → Comparison ν μ → ν ⊗ μ ⊗ μ ⇉ ν
+mk-compareᶜ⇉ : {ρ τ : Set} {k : ℕ} {ν : ρ → R} {μ : τ → 𝔽 k} → ComparisonWithCarry ν μ → ν ⊗ μ ⊗ μ ⇉ ν
 mk-compareᶜ⇉ (compareᶜ ⊣ is) = arr compareᶜ 𝔽-compareᶜ is
 ```
 
@@ -368,11 +373,11 @@ A SIM proof generator for the entire commutative tower is given below.
 
 ```
 mk-tower⇉ : {ρ τ : Set} {k : ℕ} {ν : ρ → R} {μ : τ → 𝔽 k} →
-  Comparison ν μ → (id ⊗ toℕ²) ∘ (ν ⊗ μ ⊗ μ) ⇉ ν
-mk-tower⇉ comparison = 𝔽-compareᶜ⇉ ◎ mk-compareᶜ⇉ comparison
+  ComparisonWithCarry ν μ → (id ⊗ toℕ²) ∘ (ν ⊗ μ ⊗ μ) ⇉ ν
+mk-tower⇉ comparisonWithCarry = 𝔽-compareᶜ⇉ ◎ mk-compareᶜ⇉ comparisonWithCarry
 ```
 
-## A single-bit comparison function
+## A single-bit comparisonWithCarry function
 
 We can now look at implementing a single bit inequality
 function. However, if we are going to generate a circuit from this we
@@ -465,10 +470,10 @@ Now to prove that this definition is correct.
 
 
 ```
-comparisonB₀ : Comparison 𝔹²-to-R 𝔹-to-𝔽2
-comparisonB₀ = 𝔹-compareᶜ₀ ⊣ isB
+comparisonWithCarryB₀ : ComparisonWithCarry 𝔹²-to-R 𝔹-to-𝔽2
+comparisonWithCarryB₀ = 𝔹-compareᶜ₀ ⊣ isB
   where
-    isB : is-compare 𝔹²-to-R 𝔹-to-𝔽2 𝔹-compareᶜ₀
+    isB : is-compare-with-carry 𝔹²-to-R 𝔹-to-𝔽2 𝔹-compareᶜ₀
     isB (cᵢ , a , b) = begin
         𝔹²-to-R (𝔹-compareᶜ₀ (cᵢ , a , b))
       ≡⟨⟩
@@ -615,10 +620,10 @@ Let's fully expand the truth table.
 ```
 
 ```
-comparisonB : Comparison 𝔹²-to-R 𝔹-to-𝔽2
-comparisonB = 𝔹-compareᶜ ⊣ isB
+comparisonWithCarryB : ComparisonWithCarry 𝔹²-to-R 𝔹-to-𝔽2
+comparisonWithCarryB = 𝔹-compareᶜ ⊣ isB
   where
-    isB : is-compare 𝔹²-to-R 𝔹-to-𝔽2 𝔹-compareᶜ
+    isB : is-compare-with-carry 𝔹²-to-R 𝔹-to-𝔽2 𝔹-compareᶜ
     isB = p
       where
         q :  𝔹²-to-R ∘ 𝔹-compare ≗ 𝔽-compare ∘ (𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2)
@@ -634,8 +639,215 @@ comparisonB = 𝔹-compareᶜ ⊣ isB
         p ((𝕥 , 𝕥) , a,b) = refl
 
 ```
-## Circuit diagrams
 
+## 3-bit representation of `R`
+
+In traditional hardware design it seems common to use 3-bits to represent the values of the `R` type.
+
+```
+𝔹³ : Set
+𝔹³ = 𝔹 × 𝔹 × 𝔹
+
+
+𝔹³-compare : 𝔹² → 𝔹³
+𝔹³-compare = (∧ ∘ first not) ▵ (not ∘ xor) ▵ (∧ ∘ second not)
+
+
+𝔹³-compareᶜ₀ : 𝔹³ × 𝔹² → 𝔹³
+𝔹³-compareᶜ₀ ((_ , _ , 𝕥) , a,b) = (𝕗 , 𝕗 , 𝕥)
+𝔹³-compareᶜ₀ ((_ , 𝕥 , _) , a,b) = 𝔹³-compare a,b
+𝔹³-compareᶜ₀ ((𝕥 , _ , _) , a,b) = (𝕥 , 𝕗 , 𝕗)
+𝔹³-compareᶜ₀ ((_ , _ , _) , a,b) = (𝕥 , 𝕗 , 𝕗)
+```
+
+
+## A monoid on `R`
+
+
+Let's try to define `R` as a monoid.
+
+```
+open import Algebra.Core
+open import Algebra.Structures {A = R} (_≡_)
+open import Algebra.Definitions {A = R} (_≡_)
+```
+
+```
+_∙_ : Op₂ R
+is= ∙ r₂ = r₂
+is< ∙ r₂ = is<
+is> ∙ r₂ = is>
+```
+
+```
+∙-identityˡ : LeftIdentity is= _∙_
+∙-identityˡ _ = refl
+
+∙-identityʳ : RightIdentity is= _∙_
+∙-identityʳ is= = refl
+∙-identityʳ is< = refl
+∙-identityʳ is> = refl
+
+∙-identity : Identity is= _∙_
+∙-identity =  ∙-identityˡ , ∙-identityʳ
+
+∙-assoc : Associative _∙_
+∙-assoc is= _ _ = refl
+∙-assoc is< _ _ = refl
+∙-assoc is> _ _ = refl
+
+∙-isMagma : IsMagma _∙_
+∙-isMagma = record { isEquivalence = isEquivalence; ∙-cong = cong₂ _∙_  }
+
+∙-isSemigroup : IsSemigroup _∙_
+∙-isSemigroup = record { isMagma = ∙-isMagma; assoc = ∙-assoc }
+
+∙-isMonoid : IsMonoid _∙_ is=
+∙-isMonoid = record { isSemigroup = ∙-isSemigroup; identity = ∙-identity }
+```
+
+Now that we have defined this monoid we can do a fold over a perfect
+binary tree of comparators for multiple digits.
+
+## Carry in/out formulation was a false start
+
+I didn't quite get the type for a comparator right the first time
+through.  I had `{k : ℕ} → R × 𝔽² k , k → R`. I now don't think we
+even need a carry-in.  I think the first thing we should do is
+pairwise compare the digits using `𝔽-compare` and then combine all the
+results using `_∙_`.
+
+I was unduly influenced by the type for adders. I should have realised
+that there was no need for carry-in when I had the "insight" that the
+output was of type `R`. I mistakenly thought this was a special case
+where the carry-out _was_ the output.
+
+However, another way to look at it was that the carry-in/carry-out
+concept just doesn't apply in this case.  Instead we should perform
+many comparisons in parallel and then combine the results cleverly.
+
+An interesting question to ask at this point is why addition
+_requires_ carry-in/carry-out. I think the answer is that carries in
+addition _propagate_.  However, a simple look `_∙_` shows us that no
+values propagate themselves.
+
+## A fresh start
+
+We now just want to refine `𝔽-compare` down to a 1-bit compare function.
+
+
+                ℕ² --- ℕ-compare ----> R
+                ^                      ^
+                |                      |
+               toℕ²                    id
+                |                      |
+               𝔽 i,j --- 𝔽-compare --> R
+                ^                      ^
+                |                      |
+              μ ⊗ μ                    ν
+                |                      |
+              τ × τ  --- compare ----> ρ
+
+
+```
+is-compare : {ρ τ : Set} {k : ℕ} (ν : ρ → R) (μ : τ → 𝔽 k) (compare : τ × τ → ρ) → Set
+is-compare ν μ compare = ν ∘ compare ≗ 𝔽-compare ∘ (μ ⊗ μ)
+
+record Comparison {ρ τ : Set} {k : ℕ} (ν : ρ → R) (μ : τ → 𝔽 k) : Set where
+  constructor _⊣_
+  field
+    compare : τ × τ → ρ
+    is : is-compare ν μ compare
+```
+
+We now look at the 1-bit example. We first introduce a short-hand for
+`𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2`
+
+```
+𝔹²-to-𝔽²2,2 : 𝔹² → 𝔽² (2 , 2)
+𝔹²-to-𝔽²2,2 = 𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2
+```
+
+We have already defined `𝔹-compare`. Now we just need to prove that it is
+a `Comparison`.
+
+```
+𝔹-compare-is : is-compare 𝔹²-to-R 𝔹-to-𝔽2 𝔹-compare
+𝔹-compare-is = λ { (𝕗 , 𝕗) → refl
+                 ; (𝕗 , 𝕥) → refl
+                 ; (𝕥 , 𝕗) → refl
+                 ; (𝕥 , 𝕥) → refl
+                 }
+
+𝔹-Comparison : Comparison 𝔹²-to-R 𝔹-to-𝔽2
+𝔹-Comparison = 𝔹-compare ⊣ 𝔹-compare-is
+```
+
+## And now for the combinators
+
+```
+comb : ∀ {(m , n) : ℕ²} → 𝔽² (m , n) → 𝔽 (n * m)
+comb = uncurry combine ∘ swap
+
+infixr 5 _∙_
+_●_ : ∀ {τₘ τₙ} {(m , n) : ℕ²} (μₘ : τₘ → 𝔽 m) (μₙ : τₙ → 𝔽 n)
+    → (τₘ × τₙ → 𝔽 (n * m))
+μₘ ● μₙ = comb ∘ (μₘ ⊗ μₙ)
+
+D : Set → Set → Set
+D ρ τ = τ × τ → ρ
+
+
+mk-●̂ : ∀ {ρ τₘ τₙ} → (ρ × ρ → ρ) → D ρ τₘ → D ρ τₙ → D ρ (τₘ × τₙ)
+mk-●̂ op compareₘ compareₙ  ((aₘ , aₙ)  , (bₘ , bₙ)) =
+  let ρ₁ = compareₘ (aₘ , bₘ)
+      ρ₂ = compareₙ (aₙ , bₙ)
+  in op (ρ₁ , ρ₂)
+```
+
+Now let's try to define a 2-bit comparison.
+
+```
+opᴮ₀ : 𝔹² × 𝔹² → 𝔹²
+opᴮ₀ ((𝕥 , b) , r₂) = (𝕥 , b)
+opᴮ₀ ((𝕗 , 𝕗) , r₂) = (𝕗 , 𝕗)
+opᴮ₀ ((𝕗 , 𝕥) , r₂) = r₂
+
+opᴮ : 𝔹² × 𝔹² → 𝔹²
+opᴮ = cond ∘ ((exl ∘ exl) ▵ else ▵ exl)
+  where
+    else : 𝔹² × 𝔹² → 𝔹²
+    else = cond ∘ ((not ∘ ∨ ∘ exl) ▵ exr  ▵ exl)
+
+opᴮ≗opᴮ₀ : opᴮ ≗ opᴮ₀
+opᴮ≗opᴮ₀ = λ { ((𝕗 , 𝕗) , _) →  refl
+             ; ((𝕗 , 𝕥) , _) →  refl
+             ; ((𝕥 , 𝕗) , _) →  refl
+             ; ((𝕥 , 𝕥) , _) →  refl
+             }
+
+𝔹²-compare : 𝔹² × 𝔹² → 𝔹²
+𝔹²-compare = 𝔹-compare ●̂ 𝔹-compare
+  where
+    _●̂_ : ∀ {τₘ τₙ} → D 𝔹² τₘ → D 𝔹² τₙ  → D 𝔹² (τₘ × τₙ)
+    _●̂_ = mk-●̂ opᴮ
+
+𝔹⁴-compare : (𝔹² × 𝔹²) × (𝔹² × 𝔹²) → 𝔹²
+𝔹⁴-compare = (𝔹-compare ●̂ 𝔹-compare) ●̂ (𝔹-compare ●̂ 𝔹-compare)
+  where
+    _●̂_ : ∀ {τₘ τₙ} → D 𝔹² τₘ → D 𝔹² τₙ  → D 𝔹² (τₘ × τₙ)
+    _●̂_ = mk-●̂ opᴮ
+
+```
+
+
+
+
+
+
+
+
+## The diagrams
 
 Let's see if we can get a circuit diagram for this.
 
@@ -656,6 +868,9 @@ Ĉ ρ τ = τĈⁱ ρ τ ↦ ρ
 
 𝔹̂² : Ty
 𝔹̂² = 𝔹̂ × 𝔹̂
+
+𝔹̂³ : Ty
+𝔹̂³ = 𝔹̂ × 𝔹̂ × 𝔹̂
 ```
 
 ```
@@ -683,11 +898,54 @@ Fₘ-𝔹-compareᶜC : Fₘ 𝔹-compareᶜC ≡ 𝔹-compareᶜ
 Fₘ-𝔹-compareᶜC  = refl
 ```
 
+```
+𝔹³-compareC : 𝔹̂² ↦ 𝔹̂³
+𝔹³-compareC = (∧ ∘ first not) ▵ (not ∘ xor) ▵ (∧ ∘ second not)
+
+𝔹³-compareᶜC : 𝔹̂³ × 𝔹̂² ↦ 𝔹̂³
+𝔹³-compareᶜC = cond ∘ (c₁ ▵ ((cond ∘ (c₂ ▵ (tru ▵ fls ▵ fls) ▵ (𝔹³-compareC ∘ exr))) ▵ (fls ▵ fls ▵ tru)))
+  where
+     c₁ :  𝔹̂³ × 𝔹̂² ↦ 𝔹̂
+     c₁ = exr ∘ exr ∘ exl
+
+     c₂ : 𝔹̂³ × 𝔹̂² ↦ 𝔹̂
+     c₂ = exl ∘ exr ∘ exl
+
+     fls : {a : Ty} → a ↦ 𝔹̂
+     fls  = false ∘ !
+
+     tru : {a : Ty} → a ↦ 𝔹̂
+     tru = true ∘ !
+```
+
+```
+D̂ : Ty → Ty → Set
+D̂ ρ τ = τ × τ ↦ ρ
+
+
+mk-■̂ : ∀ {ρ τₘ τₙ} → (ρ × ρ ↦ ρ) → D̂ ρ τₘ → D̂ ρ τₙ → D̂ ρ (τₘ × τₙ)
+mk-■̂ op compareₘ compareₙ = op ∘ (compareₘ ⊗ compareₙ) ∘ transpose
+
+opᴮ̂ : 𝔹̂² × 𝔹̂² ↦ 𝔹̂²
+opᴮ̂ = cond ∘ ((exl ∘ exl) ▵ else ▵ exl)
+  where
+    else : 𝔹̂² × 𝔹̂² ↦ 𝔹̂²
+    else = cond ∘ ((not ∘ ∨ ∘ exl) ▵ exr  ▵ exl)
+
+𝔹⁴-compareC : (𝔹̂² × 𝔹̂²) × (𝔹̂² × 𝔹̂²) ↦ 𝔹̂²
+𝔹⁴-compareC = (𝔹-compareC ■̂ 𝔹-compareC) ■̂ (𝔹-compareC ■̂ 𝔹-compareC)
+  where
+    _■̂_ : ∀ {τₘ τₙ} → D̂ 𝔹̂² τₘ → D̂ 𝔹̂² τₙ  → D̂ 𝔹̂² (τₘ × τₙ)
+    _■̂_ = mk-■̂ opᴮ̂
+
+Fₘ-𝔹⁴-compareᶜC : Fₘ 𝔹⁴-compareC ≡ 𝔹⁴-compare
+Fₘ-𝔹⁴-compareᶜC  = refl
+```
 
 ```
 open import Level using (0ℓ)
 open import IO
-open import Data.String
+open import Data.String hiding (_≟_)
 
 open import Primitive.Raw Function renaming (_⇨_ to _⇨ₚ_)
 open import Routing.Raw renaming (_⇨_ to _⇨ᵣ_)
@@ -696,10 +954,13 @@ open import Linearize.Raw Function _⇨ₚ_ _⇨ᵣ_ renaming (_⇨_ to _↠_)
 import Categorical.Free.Homomorphism _↠_ as FL
 import Test as T
 
-example′ : ∀ {ρ τ : Ty}
-         → String → (c : Ĉ ρ τ) → IO {0ℓ} _
-example′ name c = T.example name (Fₘ c)
+example : ∀ {a b : Ty} → String → (c : a ↦ b) → IO {0ℓ} _
+example name c = T.example name (Fₘ c)
 
 main = run do
-  example′ "boolean-compare-with-carry" 𝔹-compareᶜC
+  example "boolean-compare-with-carry" 𝔹-compareᶜC
+  example "boolean-3-compare" 𝔹³-compareC
+  example "boolean-3-compare-with-carry" 𝔹³-compareᶜC
+  example "boolean-compare" 𝔹-compareC
+  example "4-bit-compare" 𝔹⁴-compareC
 ```
