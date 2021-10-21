@@ -1,4 +1,4 @@
-!-- -*-agda2-*- -->
+<!-- -*-agda2-*- -->
 
 <!--
 ```
@@ -68,19 +68,20 @@ We choose to implement `_𝔽≤_` in a similar way. We directly define it as:
 𝔽≤ (m , n) = ℕ≤ (toℕ m , toℕ n)
 ```
 
-Let's start with a trivial proof. The type so closely follows the definition of `𝔽≤`
-that we can just use `refl`.
+Let's start with a trivial proof. The type of `toℕ²` so closely
+follows the body of `𝔽≤` that we can just use `refl`.
 
 ```
 toℕ² : {i,j : ℕ²} → 𝔽² i,j → ℕ²
 toℕ² (m , n) = (toℕ m , toℕ n)
 ```
 
-       ℕ²  --- ℕ≤ --- 𝔹
-       |              |
+       ℕ²  --- ℕ≤ ---> 𝔹
+       ^               ^
+       |               |
       toℕ²            id
-       |              |
-      𝔽² k --- 𝔽≤ --- 𝔹
+       |               |
+      𝔽² k --- 𝔽≤ ---> 𝔹
 
 ```
 toℕ-≤ : {i,j : ℕ²} → 𝔽≤ {i,j} ≗ ℕ≤ ∘ toℕ²
@@ -102,7 +103,7 @@ this note.
 
 Computing inequality for a unary representation is expensive. An
 inspection of `ℕ≤` reveals that `min (m , n)` steps are required to
-compute `m ℕ≤ n`. We can improve the performance by attempting to
+compute `ℕ≤ (m,  n)`. We can improve the performance by attempting to
 derive an algorithm that works on a representation of numbers in a
 _positional_ number system.
 
@@ -459,7 +460,7 @@ We can now sketch the commutative diagram that must be satisfied:
 
 
 In fact, this will serve as a definition even though it may not be all that efficient.
-q
+
 ```
 𝔹-compareᶜ₀ : 𝔹² × 𝔹² → 𝔹²
 𝔹-compareᶜ₀ = R-to-𝔹² ∘ 𝔽-compareᶜ ∘ (𝔹²-to-R  ⊗ 𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2)
@@ -642,22 +643,36 @@ comparisonWithCarryB = 𝔹-compareᶜ ⊣ isB
 
 ## 3-bit representation of `R`
 
-In traditional hardware design it seems common to use 3-bits to represent the values of the `R` type.
+It seems common in traditional hardware design to use 3-bits to
+represent the values of the `R` type.
 
 ```
 𝔹³ : Set
 𝔹³ = 𝔹 × 𝔹 × 𝔹
 
+𝔹³-to-R : 𝔹³ → R
+𝔹³-to-R (𝕗 , 𝕗 , 𝕗) = is<
+𝔹³-to-R (𝕥 , _ , _) = is<
+𝔹³-to-R (𝕗 , 𝕥 , _) = is=
+𝔹³-to-R (𝕗 , 𝕗 , 𝕥) = is>
 
-𝔹³-compare : 𝔹² → 𝔹³
-𝔹³-compare = (∧ ∘ first not) ▵ (not ∘ xor) ▵ (∧ ∘ second not)
+
+R-to-𝔹³ : R → 𝔹³
+R-to-𝔹³ is< = (𝕥 , 𝕗 , 𝕗)
+R-to-𝔹³ is= = (𝕗 , 𝕥 , 𝕗)
+R-to-𝔹³ is> = (𝕗 , 𝕗 , 𝕥)
 
 
-𝔹³-compareᶜ₀ : 𝔹³ × 𝔹² → 𝔹³
-𝔹³-compareᶜ₀ ((_ , _ , 𝕥) , a,b) = (𝕗 , 𝕗 , 𝕥)
-𝔹³-compareᶜ₀ ((_ , 𝕥 , _) , a,b) = 𝔹³-compare a,b
-𝔹³-compareᶜ₀ ((𝕥 , _ , _) , a,b) = (𝕥 , 𝕗 , 𝕗)
-𝔹³-compareᶜ₀ ((_ , _ , _) , a,b) = (𝕥 , 𝕗 , 𝕗)
+
+𝔹-compare-𝔹³ : 𝔹² → 𝔹³
+𝔹-compare-𝔹³ = (∧ ∘ first not) ▵ (not ∘ xor) ▵ (∧ ∘ second not)
+
+
+𝔹-compare-𝔹³ᶜ₀ : 𝔹³ × 𝔹² → 𝔹³
+𝔹-compare-𝔹³ᶜ₀ ((_ , _ , 𝕥) , a,b) = (𝕗 , 𝕗 , 𝕥)
+𝔹-compare-𝔹³ᶜ₀ ((_ , 𝕥 , _) , a,b) = 𝔹-compare-𝔹³ a,b
+𝔹-compare-𝔹³ᶜ₀ ((𝕥 , _ , _) , a,b) = (𝕥 , 𝕗 , 𝕗)
+𝔹-compare-𝔹³ᶜ₀ ((_ , _ , _) , a,b) = (𝕥 , 𝕗 , 𝕗)
 ```
 
 
@@ -673,37 +688,46 @@ open import Algebra.Definitions {A = R} (_≡_)
 ```
 
 ```
-_∙_ : Op₂ R
-is= ∙ r₂ = r₂
-is< ∙ r₂ = is<
-is> ∙ r₂ = is>
+
+-- Curry : {α : Set} → (α × α → α) → (α → α → α)
+-- Curry
+
+
+▲ : R × R → R
+▲ (is= , r₂) = r₂
+▲ (is< , _)  = is<
+▲ (is> , _)  = is>
+
+
+_▲_ : Op₂ R
+_▲_ = curry ▲
 ```
 
 ```
-∙-identityˡ : LeftIdentity is= _∙_
-∙-identityˡ _ = refl
+▲-identityˡ : LeftIdentity is= _▲_
+▲-identityˡ _ = refl
 
-∙-identityʳ : RightIdentity is= _∙_
-∙-identityʳ is= = refl
-∙-identityʳ is< = refl
-∙-identityʳ is> = refl
+▲-identityʳ : RightIdentity is= _▲_
+▲-identityʳ is= = refl
+▲-identityʳ is< = refl
+▲-identityʳ is> = refl
 
-∙-identity : Identity is= _∙_
-∙-identity =  ∙-identityˡ , ∙-identityʳ
+▲-identity : Identity is= _▲_
+▲-identity =  ▲-identityˡ , ▲-identityʳ
 
-∙-assoc : Associative _∙_
-∙-assoc is= _ _ = refl
-∙-assoc is< _ _ = refl
-∙-assoc is> _ _ = refl
+▲-assoc : Associative _▲_
+▲-assoc is= _ _ = refl
+▲-assoc is< _ _ = refl
+▲-assoc is> _ _ = refl
 
-∙-isMagma : IsMagma _∙_
-∙-isMagma = record { isEquivalence = isEquivalence; ∙-cong = cong₂ _∙_  }
+▲-isMagma : IsMagma _▲_
+▲-isMagma = record { isEquivalence = isEquivalence; ∙-cong = cong₂ _▲_  }
 
-∙-isSemigroup : IsSemigroup _∙_
-∙-isSemigroup = record { isMagma = ∙-isMagma; assoc = ∙-assoc }
+▲-isSemigroup : IsSemigroup _▲_
+▲-isSemigroup = record { isMagma = ▲-isMagma; assoc = ▲-assoc }
 
-∙-isMonoid : IsMonoid _∙_ is=
-∙-isMonoid = record { isSemigroup = ∙-isSemigroup; identity = ∙-identity }
+▲-isMonoid : IsMonoid _▲_ is=
+▲-isMonoid = record { isSemigroup = ▲-isSemigroup; identity = ▲-identity }
 ```
 
 Now that we have defined this monoid we can do a fold over a perfect
@@ -750,53 +774,114 @@ We now just want to refine `𝔽-compare` down to a 1-bit compare function.
 
 
 ```
-is-compare : {ρ τ : Set} {k : ℕ} (ν : ρ → R) (μ : τ → 𝔽 k) (compare : τ × τ → ρ) → Set
-is-compare ν μ compare = ν ∘ compare ≗ 𝔽-compare ∘ (μ ⊗ μ)
+is-compare : {ρ τ : Set} {k : ℕ} (μ : τ → 𝔽 k) (ν : ρ → R) (compare : τ × τ → ρ) → Set
+is-compare μ ν compare = ν ∘ compare ≗ 𝔽-compare ∘ (μ ⊗ μ)
 
-record Comparison {ρ τ : Set} {k : ℕ} (ν : ρ → R) (μ : τ → 𝔽 k) : Set where
+record Comparison {ρ τ : Set} {k : ℕ} (μ : τ → 𝔽 k) (ν : ρ → R): Set where
   constructor _⊣_
   field
     compare : τ × τ → ρ
-    is : is-compare ν μ compare
+    is : is-compare μ ν compare
 ```
 
-We now look at the 1-bit example. We first introduce a short-hand for
-`𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2`
+
+I want to make `μ` concrete but leave `ρ` unspecified for the moment.
+
 
 ```
-𝔹²-to-𝔽²2,2 : 𝔹² → 𝔽² (2 , 2)
-𝔹²-to-𝔽²2,2 = 𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2
+record Nu (ρ : Set) : Set where
+  field
+    ν   : ρ → R
+    ν⁻¹ : R → ρ
+    right-invertible : ν ∘ ν⁻¹ ≗ id
+    -- ρ can have redundant values that map to the 3 values of R
+    -- however this means it's not left invertible. i.e.  it is not true that ν⁻¹ ∘ ν ≗ id
+
+𝔹-compare-ρ : {ρ : Set} → (nu : Nu ρ) → 𝔹² → ρ
+𝔹-compare-ρ nu (𝕗 , 𝕗) = (Nu.ν⁻¹ nu) is=
+𝔹-compare-ρ nu (𝕗 , 𝕥) = (Nu.ν⁻¹ nu) is<
+𝔹-compare-ρ nu (𝕥 , 𝕗) = (Nu.ν⁻¹ nu) is>
+𝔹-compare-ρ nu (𝕥 , 𝕥) = (Nu.ν⁻¹ nu) is=
+
+is-𝔹-compare : {ρ : Set} → (nu : Nu ρ) → Set
+is-𝔹-compare nu = is-compare 𝔹-to-𝔽2 (Nu.ν nu) (𝔹-compare-ρ nu)
+
+
+𝔹²-nu : Nu 𝔹²
+𝔹²-nu = record { ν = 𝔹²-to-R ; ν⁻¹ = R-to-𝔹² ; right-invertible = λ { is< → refl ; is= → refl ; is> → refl } }
+
+𝔹³-nu : Nu 𝔹³
+𝔹³-nu = record { ν = 𝔹³-to-R ; ν⁻¹ = R-to-𝔹³ ; right-invertible = λ { is< → refl ; is= → refl ; is> → refl } }
+
+nu-to-is-𝔹-compare : {ρ : Set} → (nu : Nu ρ) → is-𝔹-compare nu
+nu-to-is-𝔹-compare nu =
+    λ { f,f@(𝕗 , 𝕗) → p {f,f} {is=} refl refl
+      ; f,t@(𝕗 , 𝕥) → p {f,t} {is<} refl refl
+      ; t,f@(𝕥 , 𝕗) → p {t,f} {is>} refl refl
+      ; t,t@(𝕥 , 𝕥) → p {t,t} {is=} refl refl
+      }
+
+  where
+    open ≡-Reasoning
+    p : ∀ {a b}
+        → 𝔹-compare-ρ nu a ≡ Nu.ν⁻¹ nu b
+        → b ≡ 𝔽-compare ((𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2) a)
+        → Nu.ν nu (𝔹-compare-ρ nu a) ≡ 𝔽-compare ((𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2) a)
+    p {a} {b} eq eq2 =
+      begin
+        Nu.ν nu (𝔹-compare-ρ nu a)
+      ≡⟨ cong (Nu.ν nu) eq ⟩
+        (Nu.ν nu ∘ Nu.ν⁻¹ nu) b
+      ≡⟨ Nu.right-invertible nu b ⟩
+        id b
+      ≡⟨⟩
+        b
+      ≡⟨ eq2 ⟩
+        𝔽-compare ((𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2) a)
+      ∎
 ```
 
-We have already defined `𝔹-compare`. Now we just need to prove that it is
-a `Comparison`.
+We can now plug different `Nu` values to create comparison functions with `ρ = 𝔹²`
+and `ρ = 𝔹³` respectively.
+
 
 ```
-𝔹-compare-is : is-compare 𝔹²-to-R 𝔹-to-𝔽2 𝔹-compare
-𝔹-compare-is = λ { (𝕗 , 𝕗) → refl
-                 ; (𝕗 , 𝕥) → refl
-                 ; (𝕥 , 𝕗) → refl
-                 ; (𝕥 , 𝕥) → refl
-                 }
+mk-𝔹-Comparison : {ρ : Set} → (nu : Nu ρ) → Comparison 𝔹-to-𝔽2 (Nu.ν nu)
+mk-𝔹-Comparison {ρ} nu = 𝔹-compare-ρ nu ⊣ (nu-to-is-𝔹-compare nu)
 
-𝔹-Comparison : Comparison 𝔹²-to-R 𝔹-to-𝔽2
-𝔹-Comparison = 𝔹-compare ⊣ 𝔹-compare-is
+𝔹-Comparison-𝔹² : Comparison 𝔹-to-𝔽2 𝔹²-to-R
+𝔹-Comparison-𝔹² = mk-𝔹-Comparison 𝔹²-nu
+
+𝔹-Comparison-𝔹³ : Comparison 𝔹-to-𝔽2 𝔹³-to-R
+𝔹-Comparison-𝔹³ = mk-𝔹-Comparison 𝔹³-nu
 ```
 
 ## And now for the combinators
+
+        R × R ----- _·_ ------> R
+          ^                     ^
+          |                     |
+        ν ⊗ ν                   ν
+          |                     |
+          |                     |
+        ρ × ρ ----- _●_ ------> ρ
+
+
+```
+is-monoid-op : {ρ : Set} → (ρ → R) → (△ : ρ × ρ → ρ) → Set
+is-monoid-op ν △ = ▲ ∘ (ν ⊗ ν) ≗ ν ∘ △
+```
 
 ```
 comb : ∀ {(m , n) : ℕ²} → 𝔽² (m , n) → 𝔽 (n * m)
 comb = uncurry combine ∘ swap
 
-infixr 5 _∙_
 _●_ : ∀ {τₘ τₙ} {(m , n) : ℕ²} (μₘ : τₘ → 𝔽 m) (μₙ : τₙ → 𝔽 n)
     → (τₘ × τₙ → 𝔽 (n * m))
 μₘ ● μₙ = comb ∘ (μₘ ⊗ μₙ)
 
 D : Set → Set → Set
 D ρ τ = τ × τ → ρ
-
 
 mk-●̂ : ∀ {ρ τₘ τₙ} → (ρ × ρ → ρ) → D ρ τₘ → D ρ τₙ → D ρ (τₘ × τₙ)
 mk-●̂ op compareₘ compareₙ  ((aₘ , aₙ)  , (bₘ , bₙ)) =
@@ -825,13 +910,48 @@ opᴮ≗opᴮ₀ = λ { ((𝕗 , 𝕗) , _) →  refl
              ; ((𝕥 , 𝕗) , _) →  refl
              ; ((𝕥 , 𝕥) , _) →  refl
              }
+```
 
+Let's see if we can show it's a monoid op.
+
+```
+opᴮ-is-monoid-op : is-monoid-op 𝔹²-to-R opᴮ
+opᴮ-is-monoid-op = λ { ((𝕗 , 𝕗) , _) → refl
+                     ; ((𝕗 , 𝕥) , _) → refl
+                     ; ((𝕥 , _) , _) → refl
+                     }
+```
+
+Now let's try it with comparison function with three values.
+
+```
+opᴮ³ : 𝔹³ × 𝔹³ → 𝔹³
+opᴮ³ ((𝕥 , _ , _) , r₂) = (𝕥 , 𝕗 , 𝕗)
+opᴮ³ ((𝕗 , 𝕥 , _) , r₂) = r₂
+opᴮ³ ((𝕗 , 𝕗 , 𝕥) , r₂) = (𝕗 , 𝕗 , 𝕥)
+opᴮ³ ((𝕗 , 𝕗 , 𝕗) , r₂) = (𝕥 , 𝕗 , 𝕗)
+
+opᴮ³-is-monoid-op : is-monoid-op 𝔹³-to-R opᴮ³
+opᴮ³-is-monoid-op = λ { ((𝕥 , _ , _) , _) → refl
+                      ; ((𝕗 , 𝕥 , _) , _) → refl
+                      ; ((𝕗 , 𝕗 , 𝕥) , _) → refl
+                      ; ((𝕗 , 𝕗 , 𝕗) , _) → refl
+                      }
+```
+
+
+
+```
 𝔹²-compare : 𝔹² × 𝔹² → 𝔹²
 𝔹²-compare = 𝔹-compare ●̂ 𝔹-compare
   where
     _●̂_ : ∀ {τₘ τₙ} → D 𝔹² τₘ → D 𝔹² τₙ  → D 𝔹² (τₘ × τₙ)
     _●̂_ = mk-●̂ opᴮ
+```
 
+And now a 4-bit comparison.
+
+```
 𝔹⁴-compare : (𝔹² × 𝔹²) × (𝔹² × 𝔹²) → 𝔹²
 𝔹⁴-compare = (𝔹-compare ●̂ 𝔹-compare) ●̂ (𝔹-compare ●̂ 𝔹-compare)
   where
@@ -840,16 +960,7 @@ opᴮ≗opᴮ₀ = λ { ((𝕗 , 𝕗) , _) →  refl
 
 ```
 
-
-
-
-
-
-
-
 ## The diagrams
-
-Let's see if we can get a circuit diagram for this.
 
 ```
 open import Ty
@@ -893,17 +1004,13 @@ Ĉ ρ τ = τĈⁱ ρ τ ↦ ρ
      tru = true ∘ !
 ```
 
-```
-Fₘ-𝔹-compareᶜC : Fₘ 𝔹-compareᶜC ≡ 𝔹-compareᶜ
-Fₘ-𝔹-compareᶜC  = refl
-```
 
 ```
-𝔹³-compareC : 𝔹̂² ↦ 𝔹̂³
-𝔹³-compareC = (∧ ∘ first not) ▵ (not ∘ xor) ▵ (∧ ∘ second not)
+𝔹-compare-𝔹³C : 𝔹̂² ↦ 𝔹̂³
+𝔹-compare-𝔹³C = (∧ ∘ first not) ▵ (not ∘ xor) ▵ (∧ ∘ second not)
 
-𝔹³-compareᶜC : 𝔹̂³ × 𝔹̂² ↦ 𝔹̂³
-𝔹³-compareᶜC = cond ∘ (c₁ ▵ ((cond ∘ (c₂ ▵ (tru ▵ fls ▵ fls) ▵ (𝔹³-compareC ∘ exr))) ▵ (fls ▵ fls ▵ tru)))
+𝔹-compare-𝔹³ᶜC : 𝔹̂³ × 𝔹̂² ↦ 𝔹̂³
+𝔹-compare-𝔹³ᶜC = cond ∘ (c₁ ▵ ((cond ∘ (c₂ ▵ (tru ▵ fls ▵ fls) ▵ (𝔹-compare-𝔹³C ∘ exr))) ▵ (fls ▵ fls ▵ tru)))
   where
      c₁ :  𝔹̂³ × 𝔹̂² ↦ 𝔹̂
      c₁ = exr ∘ exr ∘ exl
@@ -959,8 +1066,8 @@ example name c = T.example name (Fₘ c)
 
 main = run do
   example "boolean-compare-with-carry" 𝔹-compareᶜC
-  example "boolean-3-compare" 𝔹³-compareC
-  example "boolean-3-compare-with-carry" 𝔹³-compareᶜC
+  example "boolean-3-compare" 𝔹-compare-𝔹³C
+  example "boolean-3-compare-with-carry" 𝔹-compare-𝔹³ᶜC
   example "boolean-compare" 𝔹-compareC
   example "4-bit-compare" 𝔹⁴-compareC
 ```
