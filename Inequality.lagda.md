@@ -25,11 +25,56 @@ open import Relation.Nullary.Decidable
 ```
 -->
 
-In this document we are going to try to derive an efficient implementation of
-"less than or equal to" in hardware. We will start with the definition of `_≤ᵇ_`
-on _natural numbers_. We use a slightly different, but equivalent, definition
-to the definition of `_≤ᵇ_` in the Agda Standard Library. We have renamed it for
-clarity.
+In this document we derive efficient comparison circuits. The original
+goal was to derive an efficient implementation of the
+less-than-or-equal-to comparison circuit, but it became quickly
+apparent that solving a more general problem was the right thing to
+do.
+
+The design philosophy followed in this document is quite different to
+the common approach. Rather than attempt a proof of correctness only
+after the implementation is complete, design and proof of correctness
+are performed simultaneously. In fact correctness proofs are often
+kept deliberately abstract, in the sense that they prove correctness
+over a family of implementations. These proofs often have parameters
+that can be provided to produce a more concrete proof of correctness.
+
+Throughout this process we strive to keep the mathematical
+specification and the implementation as distinct concepts. In
+particular we do not allow operational concerns to influence the top
+level mathematical specification.
+
+However, the design process is performed in a stepwise manner. At each
+step we can introduce operational concerns, such as bounds on numbers,
+but the point is not to do this too early in the process as it is
+unnecessarily restrictive and can prevent one from seeing elegant and
+powerful implementations.
+
+To illustrate this point consider the list (`[]`) data type in
+Haskell.  To the Haskell beginner, consuming output from a function
+that produces an infinite list seems like it must yield a program
+which does not terminate. However, Haskell's non-strict semantics have
+the delightful consequence that they make this untrue.  Had the
+designers of Haskell unnecessarily restricted their thought with the
+operational concern that all computers have finite memory it's
+possible that they would never have seen the possibility of finitely
+consuming the results of a function which produced an infinite list.
+
+As an organising principle for this document I will try to, as much as
+possible, reflect the entire design process, including work that was
+thrown away but nevertheless provided insight for more promising
+avenues that eventually led to the final result.
+
+To start, we will look at specifying just the less-than-or-equal-to
+operator and see where that takes us.
+
+## Starting with less-than-or-equal-to
+
+
+We first define some notational conveniences. `𝔽` and `𝔹` are just
+shorthand for finite sets and booleans respectively. The "squared"
+versions of these types (and natural numbers) allow us to succinctly
+denote products of these types.
 
 ```
 ℕ² : Set
@@ -42,6 +87,11 @@ clarity.
 𝔹² = 𝔹 × 𝔹
 ```
 
+As our specification of the less-than-or-equal-to operator we use a
+slightly different, but equivalent, definition to the definition of
+`_≤ᵇ_` in the Agda Standard Library. We have renamed it for clarity.
+
+
 ```
 ℕ≤ : ℕ² → 𝔹
 ℕ≤ (zero , _)      = 𝕥
@@ -49,9 +99,19 @@ clarity.
 ℕ≤ (suc m , suc n) = ℕ≤ (m , n)
 ```
 
+We now come to the first refinement in the design process. The unary
+representation of natural numbers, while easy to reason about, is a
+very inefficient representation. An inspection of `ℕ≤` reveals that
+`min (m , n)` steps are required to compute `ℕ≤ (m, n)`. Thus we we'll
+want to investigate a multi-digit representation of numbers.  Digits
+themselves are bounded by the base they represent. For instance there
+are ten decimal digits and two binary digits.
+
+-------   WHERE YOU GOT UP TO
+
 As it turns out there is no equivalent definition of a `_≤ᵇ_` operator in the
 Standard Library's `Data.Fin` module. However, `_≤_` is defined as a
-v_type synonym_ as follows:
+_type synonym_ as follows:
 
 
     _≤_ : ∀ {n} → Rel (Fin n) 0ℓ
@@ -667,14 +727,12 @@ R-to-𝔹³ is> = (𝕗 , 𝕗 , 𝕥)
 𝔹-compare-𝔹³ : 𝔹² → 𝔹³
 𝔹-compare-𝔹³ = (∧ ∘ first not) ▵ (not ∘ xor) ▵ (∧ ∘ second not)
 
-
 𝔹-compare-𝔹³ᶜ₀ : 𝔹³ × 𝔹² → 𝔹³
 𝔹-compare-𝔹³ᶜ₀ ((_ , _ , 𝕥) , a,b) = (𝕗 , 𝕗 , 𝕥)
 𝔹-compare-𝔹³ᶜ₀ ((_ , 𝕥 , _) , a,b) = 𝔹-compare-𝔹³ a,b
 𝔹-compare-𝔹³ᶜ₀ ((𝕥 , _ , _) , a,b) = (𝕥 , 𝕗 , 𝕗)
 𝔹-compare-𝔹³ᶜ₀ ((_ , _ , _) , a,b) = (𝕥 , 𝕗 , 𝕗)
 ```
-
 
 ## A monoid on `R`
 
@@ -765,7 +823,7 @@ We now just want to refine `𝔽-compare` down to a 1-bit compare function.
                 |                      |
                toℕ²                    id
                 |                      |
-               𝔽 i,j --- 𝔽-compare --> R
+               𝔽² k,k --- 𝔽-compare --> R
                 ^                      ^
                 |                      |
               μ ⊗ μ                    ν
@@ -858,19 +916,20 @@ mk-𝔹-Comparison {ρ} nu = 𝔹-compare-ρ nu ⊣ (nu-to-is-𝔹-compare nu)
 
 ## And now for the combinators
 
-        R × R ----- _·_ ------> R
-          ^                     ^
-          |                     |
-        ν ⊗ ν                   ν
-          |                     |
-          |                     |
-        ρ × ρ ----- _●_ ------> ρ
+        R × R ----- ▲ ------> R
+          ^                   ^
+          |                   |
+        ν ⊗ ν                 ν
+          |                   |
+          |                   |
+        ρ × ρ ----- △ ------> ρ
 
 
 ```
 is-monoid-op : {ρ : Set} → (ρ → R) → (△ : ρ × ρ → ρ) → Set
 is-monoid-op ν △ = ▲ ∘ (ν ⊗ ν) ≗ ν ∘ △
 ```
+
 
 ```
 comb : ∀ {(m , n) : ℕ²} → 𝔽² (m , n) → 𝔽 (n * m)
