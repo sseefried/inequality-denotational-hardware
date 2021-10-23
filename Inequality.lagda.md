@@ -104,10 +104,9 @@ representation of natural numbers, while easy to reason about, is a
 very inefficient representation. An inspection of `ℕ≤` reveals that
 `min (m , n)` steps are required to compute `ℕ≤ (m, n)`. Thus we we'll
 want to investigate a multi-digit representation of numbers.  Digits
-themselves are bounded by the base they represent. For instance there
-are ten decimal digits and two binary digits.
-
--------   WHERE YOU GOT UP TO
+themselves are bounded by the base they represent. For instance, there
+are ten decimal digits and two binary digits. Thus we'll want to
+define a comparison function on finite sets.
 
 As it turns out there is no equivalent definition of a `_≤ᵇ_` operator in the
 Standard Library's `Data.Fin` module. However, `_≤_` is defined as a
@@ -128,13 +127,8 @@ We choose to implement `_𝔽≤_` in a similar way. We directly define it as:
 𝔽≤ (m , n) = ℕ≤ (toℕ m , toℕ n)
 ```
 
-Let's start with a trivial proof. The type of `toℕ²` so closely
-follows the body of `𝔽≤` that we can just use `refl`.
-
-```
-toℕ² : {i,j : ℕ²} → 𝔽² i,j → ℕ²
-toℕ² (m , n) = (toℕ m , toℕ n)
-```
+We now define a commutative diagram to represent the properties we
+want this refinement to have.
 
        ℕ²  --- ℕ≤ ---> 𝔹
        ^               ^
@@ -142,6 +136,18 @@ toℕ² (m , n) = (toℕ m , toℕ n)
       toℕ²            id
        |               |
       𝔽² k --- 𝔽≤ ---> 𝔹
+
+
+Function `toℕ²` is defined as:
+
+```
+toℕ² : {i,j : ℕ²} → 𝔽² i,j → ℕ²
+toℕ² (m , n) = (toℕ m , toℕ n)
+```
+
+Let's start with a trivial proof of the commutativity of the
+diagram. The type of `toℕ²` so closely follows the body of `𝔽≤` that
+we can just use `refl`.
 
 ```
 toℕ-≤ : {i,j : ℕ²} → 𝔽≤ {i,j} ≗ ℕ≤ ∘ toℕ²
@@ -159,13 +165,13 @@ For want of a better term we are going to call this a
 Specification-Implementation-Mapping Proof (SIM proof) in the rest of
 this note.
 
-## A first attempt at defining inequality on multi-digit representations
+## A first attempt at defining ≤ on multi-digit representations
 
-Computing inequality for a unary representation is expensive. An
-inspection of `ℕ≤` reveals that `min (m , n)` steps are required to
-compute `ℕ≤ (m,  n)`. We can improve the performance by attempting to
-derive an algorithm that works on a representation of numbers in a
-_positional_ number system.
+As I mentioned before computing ≤ for a unary representation is
+expensive. An inspection of `ℕ≤` reveals that `min (m , n)` steps are
+required to compute `ℕ≤ (m, n)`. We can improve the performance by
+attempting to derive an algorithm that works on a representation of
+numbers in a _positional_ number system.
 
 Consider two base 10 numbers, say, 34 and 123. Let's stack them on
 top of each other, as follows.
@@ -174,14 +180,19 @@ top of each other, as follows.
    123
 
 Because 34 is only a 2-digit number and 123 is a 3-digit number
-we can quickly deduce that 34 ≤ 123. This suggest that comparison
-should go in order from the most significant digits down to the least
-significant digits. If we think of 34 as the three-digit number 034.
-We can see that the 0 from 034 is less than or equal to the 1 from 123
-and thus we can stop with a result of `true`. The opposite is true if
-the most significant digit of the first number is greater than the
-second, and we yield the result `false`. If the most significant
-digit is equal we must check the remaining digits.
+we can quickly deduce that 34 ≤ 123.
+
+This suggests that comparison should go in order from the most
+significant digits down to the least significant digits. If we think
+of 34 as the three-digit number 034.  We can see that the 0 from 034
+is less than or equal to the 1 from 123 and thus we can stop with a
+result of `true`. The opposite is true if the most significant digit
+of the first number is greater than the second, and we yield the
+result `false`. If the most significant digit is equal we must check
+the remaining digits.
+
+As it turns out, this was incorrect, but I'll wait until later to tell
+you why. For now, we'll continue in this direction.
 
 It looks like we are going to need to define less-than and equality
 operators for both `ℕ` and `𝔽`.
@@ -199,22 +210,25 @@ operators for both `ℕ` and `𝔽`.
 𝔽= (suc m , suc n) = 𝔽= (m , n)
 ```
 
-Just like for the operation of addition, it looks like some notion of
-_carry-in_ becomes necessary when doing inequality on multi-digit
-numbers. The necessity of carry-in implies that carry-out is also
+At this point I made my second design mistake. It seemed like some notion of
+_carry-in_ was necessary when doing less-than-or-equal-to on multi-digit
+numbers.
+
+
+I reasoned that the necessity of carry-in implies that carry-out was also
 necessary so that it may be fed into the comparison of the next digit
 position.
 
 Using our previous discussion of the comparison of 34 and 123 as
-inspiration, at first it seems like the carry-in should be a pair of
-booleans, one denoting whether the two digits are less-than each
-other and the other denoting whether they are equal.
+inspiration, at first it then seemed reasonable that the carry-in
+should be a pair of booleans, one denoting whether the two digits are
+less-than each other and the other denoting whether they are equal.
 
-However, we quickly see that when the boolean denoting less-than is
-true this implies the boolean denoting equality is false, and vice
-versa.
+However, this led to an insight. We quickly see that when the boolean
+denoting less-than is true this implies the boolean denoting equality
+is false, and vice versa.
 
-This leads us to consider a new data type.
+This led me to consider a new data type.
 
 ## Generalising from less-than-or-equal to a comparison relation
 
@@ -251,7 +265,7 @@ building block that can be used for equality and any of the other
 inequality relations. This delights me.
 
 Now that we have declared the `R` data type we no longer have need of
-functions `F<`, `F=`, etc. Instead we define a function `𝔽-compare`.
+functions `𝔽<`, `𝔽=`, etc. Instead we define a function `𝔽-compare`.
 
 ```
 𝔽-compare : {i,j : ℕ²} → 𝔽² i,j → R
