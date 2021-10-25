@@ -191,8 +191,8 @@ of the first number is greater than the second, and we yield the
 result `false`. If the most significant digit is equal we must check
 the remaining digits.
 
-As it turns out, this was incorrect, but I'll wait until later to tell
-you why. For now, we'll continue in this direction.
+As it turns out, this was incorrect, but I'll wait until later to
+reveal why. For now, we'll continue in this direction.
 
 It looks like we are going to need to define less-than and equality
 operators for both `ℕ` and `𝔽`.
@@ -308,154 +308,13 @@ We package this up as a SIM Proof as follows:
 𝔽-compare⇉  = arr 𝔽-compare ℕ-compare toℕ²-ℕ-compare
 ```
 
-We are now finally in a position to define a comparison function
-involving carry-in/out. We use the a super-script `c` (`ᶜ`) in the
-name to distinguish it.
+## A one-bit comparison function
 
-We are immediately faced with the question: what should the type of
-this function be? The source type is easy. It should be the carry-in
-along with the two numbers to compare. Note, here we set the numbers
-to have the same bound `k` since we are looking at the specific case
-of comparing two numbers that use the same positional number system
-including the base of each digit.
+Before going on we'll perform another refinement down to a single
+digit binary comparison function.
+[TODO: explain central techniques like the commutative tower]
 
-```
-Cⁱ : Set → Set
-Cⁱ a = R × a
-
-𝔽Cⁱ : ℕ → Set
-𝔽Cⁱ k = Cⁱ (𝔽² (k , k))
-
-ℕCⁱ : Set
-ℕCⁱ = Cⁱ ℕ²
-```
-
-But what about the target type? For the case of addition it was a pair
-containing the result of the adding the two numbers along with the
-carry-out bit. However, in the case of less-than-or-equal, our result
-type _is the same as_ our carry-in type. Thus we just return a value
-of type `R`.  Later, when we use our function to compare multiple
-digits we just feed the result in _as_ the carry-in to the next
-invocation.
-
-Here is the definition of `𝔽-compareᶜ`.
-
-```
-𝔽-compareᶜ : {k : ℕ} → 𝔽Cⁱ k → R
-𝔽-compareᶜ (is< , _ , _) = is<
-𝔽-compareᶜ (is= , m , n) = 𝔽-compare (m , n)
-𝔽-compareᶜ (is> , _ , _) = is>
-```
-
-What does comparison-with-carry look like on natural numbers? It
-should satisfy the following commutative diagram.
-
-
-       ℕCⁱ --- ℕ-compareᶜ ---> R
-        ^                      ^
-        |                      |
-     id ⊗ toℕ²                 id
-        |                      |
-      𝔽Cⁱ k - 𝔽-compareᶜ ----> R
-
-Just like for the operation of addition we will need to "guess" what
-the definition of `ℕ-compareᶜ` should be, but we will quickly find out
-whether it is correct or not when we try to prove the commutative
-diagram holds.
-
-
-```
-ℕ-compareᶜ : ℕCⁱ → R
-ℕ-compareᶜ (is< , _ , _) = is<
-ℕ-compareᶜ (is= , m , n) = ℕ-compare (m , n)
-ℕ-compareᶜ (is> , m , n) = is>
-```
-
-The property we need to prove is called `toℕ²-ℕ-compareᶜ`.
-
-```
--- Helper proof
-eq-𝔽-compareᶜ-𝔽-compareᶜ : {k : ℕ} → (r : R) → (m,n :  𝔽² (k , k)) → 𝔽-compareᶜ {k} (r , m,n) ≡ ℕ-compareᶜ (r , toℕ² m,n)
-eq-𝔽-compareᶜ-𝔽-compareᶜ is< m,n = refl
-eq-𝔽-compareᶜ-𝔽-compareᶜ is= m,n rewrite sym (toℕ²-ℕ-compare m,n) = refl
-eq-𝔽-compareᶜ-𝔽-compareᶜ is> m,n = refl
-
-toℕ²-ℕ-compareᶜ : {k : ℕ} → 𝔽-compareᶜ {k} ≗ ℕ-compareᶜ ∘ (id ⊗ toℕ²)
-toℕ²-ℕ-compareᶜ {k} (r , (m , n)) rewrite eq-𝔽-compareᶜ-𝔽-compareᶜ {k} r (m , n) = refl
-```
-
-We can now package this up as a SIM proof.
-
-```
-𝔽-compareᶜ⇉ : {k : ℕ} → id ⊗ toℕ² {k , k} ⇉ id
-𝔽-compareᶜ⇉ = arr 𝔽-compareᶜ ℕ-compareᶜ toℕ²-ℕ-compareᶜ
-```
-
-## Abstracting on comparison functions
-
-At this point we could be hasty and simply derive a comparison
-function that uses bit vectors. But let's _not_ be hasty. To avoid this
-we can abstract over the notion of comparison-with-carry.
-
-Using a similar idea from Conal's "Adders and Arrows" note, we replace
-the representation type, `𝔽 k`, with an arbitrary representation type
-`τ` and introduce a meaning function `μ : τ → 𝔽 k` for some `k :
-ℕ`. In addition we also abstract over the represention type of `R` calling it `ρ`
-and introducing another meaning function `ν : ρ → R`.
-
-```
-τCⁱ : Set → Set → Set
-τCⁱ ρ τ =  ρ × τ × τ
-```
-
-It should satisfy the following commutative diagram:
-
-      𝔽Cⁱ k -- 𝔽-compareᶜ --> R
-        ^                     ^
-        |                     |
-     ν ⊗ μ ⊗ μ                ν
-        |                     |
-      τCⁱ k --- compareᶜ ---> ρ
-
-In code:
-
-```
-is-compare-with-carry : {ρ τ : Set} {k : ℕ} (ν : ρ → R) (μ : τ → 𝔽 k) (compareᶜ : τCⁱ ρ τ → ρ) → Set
-is-compare-with-carry ν μ compareᶜ = ν ∘ compareᶜ ≗ 𝔽-compareᶜ ∘ (ν ⊗ μ ⊗ μ)
-```
-
-Let's now package `compareᶜ` functions along with proofs that they are valid
-refinements of `𝔽-compareᶜ`.
-
-```
-infix 1 _⊣_
-record ComparisonWithCarry {ρ τ : Set} {k : ℕ} (ν : ρ → R) (μ : τ → 𝔽 k) : Set where
-  constructor _⊣_
-  field
-    compareᶜ : τCⁱ ρ τ → ρ
-    is : is-compare-with-carry ν μ compareᶜ
-```
-
-We can now define a SIM proof _generator_ that, given a value of type `ComparisonWithCarry μ`
-yields a SIM proof satisfying the commutative diagram above.
-
-```
-mk-compareᶜ⇉ : {ρ τ : Set} {k : ℕ} {ν : ρ → R} {μ : τ → 𝔽 k} → ComparisonWithCarry ν μ → ν ⊗ μ ⊗ μ ⇉ ν
-mk-compareᶜ⇉ (compareᶜ ⊣ is) = arr compareᶜ 𝔽-compareᶜ is
-```
-
-A SIM proof generator for the entire commutative tower is given below.
-
-```
-mk-tower⇉ : {ρ τ : Set} {k : ℕ} {ν : ρ → R} {μ : τ → 𝔽 k} →
-  ComparisonWithCarry ν μ → (id ⊗ toℕ²) ∘ (ν ⊗ μ ⊗ μ) ⇉ ν
-mk-tower⇉ comparisonWithCarry = 𝔽-compareᶜ⇉ ◎ mk-compareᶜ⇉ comparisonWithCarry
-```
-
-## A single-bit comparisonWithCarry function
-
-We can now look at implementing a single bit inequality
-function. However, if we are going to generate a circuit from this we
+However, if we are going to generate a circuit from this we
 will have to use boolean values to represent values of both type `R`
 and `𝔽 2`.
 
@@ -476,7 +335,8 @@ definition. Using the representation we have chosen it is cleary `(𝕥 ,
 𝕥)`. Fortunately, this value would be meaningless since two numbers
 cannot both be less-than and equal to each other. Nevertheless, the
 redundancy of the `B²` type in representing `R` values does not sit
-well with me, and seems inelegant. Perhaps this could be improved.
+well with me, and seems inelegant. The non-redundant representation of
+sum types like `R` is still an open problem in want of a solution.
 
 We want `R-to-𝔹²` to be invertible but this leads us to the question
 of what we should do with the input `(𝕥 , 𝕥)`. One choice is that it
@@ -497,13 +357,15 @@ following is true.
 
     (R-to-𝔹² ∘ 𝔹²-to-R) (𝕥 , 𝕥) = (𝕥 , 𝕗)
 
-Thus we cannot prove that `R-to-𝔹² ∘ 𝔹²-to-R ≗ id`
-
-I suspect this is going to bite us, and pretty soon, but since I don't
-know how to solve this problem we will press on.
+Thus we cannot prove that `R-to-𝔹² ∘ 𝔹²-to-R ≗ id` but we can prove
+`𝔹²-to-R ∘ R-to-𝔹² ≗ id`.
 
 
-Next we define `F𝟚-to-𝔹` and `𝔹-to­𝔽2` as follows:
+
+Next we define a pair of functions `F𝟚-to-𝔹` and `𝔹-to­𝔽2` for
+converting between finite sets of cardinality two and booleans and
+vice versa.
+
 ```
 F𝟚-to-𝔹 : 𝔽 2 → 𝔹
 F𝟚-to-𝔹 zero       = 𝕗
@@ -514,74 +376,28 @@ F𝟚-to-𝔹 (suc zero) = 𝕥
 𝔹-to-𝔽2 𝕥 = suc zero
 ```
 
-```
-𝔹²-to-R∘R-to-𝔹²≗id : 𝔹²-to-R ∘ R-to-𝔹² ≗ id
-𝔹²-to-R∘R-to-𝔹²≗id x with x
-... | is< = refl
-... | is= = refl
-... | is> = refl
-```
-
-We can now sketch the commutative diagram that must be satisfied:
 
 
-        R × 𝔽² (2 , 2) --- 𝔽-compareᶜ ---> R
-              ^                            ^
-              |                            |
-       𝔹²-to-R ⊗ 𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2     𝔹²-to-R
-              |                            |
-           𝔹² × B² ------- compareᶜ ------> 𝔹²
+Our commutative tower now looks like this
 
-
-In fact, this will serve as a definition even though it may not be all that efficient.
-
-```
-𝔹-compareᶜ₀ : 𝔹² × 𝔹² → 𝔹²
-𝔹-compareᶜ₀ = R-to-𝔹² ∘ 𝔽-compareᶜ ∘ (𝔹²-to-R  ⊗ 𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2)
-```
-
-
-Now to prove that this definition is correct.
-
-
-```
-comparisonWithCarryB₀ : ComparisonWithCarry 𝔹²-to-R 𝔹-to-𝔽2
-comparisonWithCarryB₀ = 𝔹-compareᶜ₀ ⊣ isB
-  where
-    isB : is-compare-with-carry 𝔹²-to-R 𝔹-to-𝔽2 𝔹-compareᶜ₀
-    isB (cᵢ , a , b) = begin
-        𝔹²-to-R (𝔹-compareᶜ₀ (cᵢ , a , b))
-      ≡⟨⟩
-        𝔹²-to-R (R-to-𝔹² (𝔽-compareᶜ (𝔹²-to-R  cᵢ , 𝔹-to-𝔽2 a ,  𝔹-to-𝔽2 b)))
-      ≡⟨ 𝔹²-to-R∘R-to-𝔹²≗id (𝔽-compareᶜ (𝔹²-to-R  cᵢ , 𝔹-to-𝔽2 a ,  𝔹-to-𝔽2 b)) ⟩
-        (𝔽-compareᶜ (𝔹²-to-R cᵢ ,  𝔹-to-𝔽2 a , 𝔹-to-𝔽2 b))
-      ∎
-      where
-        open ≡-Reasoning
-```
-
-This was as expected. Now let's look at a more efficient solution.
-
-----
-
-
-We will first want a function `𝔹-compare` which is a refinement of
-`𝔽-compare` (not `𝔽-compareᶜ`). This is hinted at by the use of
-`𝔽-compare` within the definition of `𝔽-compareᶜ`.
-
-
-
-       𝔽 2,2 --- 𝔽-compare --> R
+        ℕ² --- ℕ-compare ----> R
         ^                      ^
         |                      |
- 𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2          𝔹²-to-R
+       toℕ²                    id
         |                      |
-       𝔹² ----- 𝔹-compare ---> 𝔹²
+       𝔽 i,j --- 𝔽-compare --> R
+        ^                      ^
+        |                      |
+   𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2        𝔹²-to-R
+        |                      |
+        𝔹² --- 𝔹-compare-𝔹² ----> 𝔹²
 
+
+Now all that remains is to define `𝔹-compare-𝔹²`.
 
 We do a simple case analysis on `𝔽-compare` along with the following,
 machine-checked, facts to yield a preliminary definition for
-`𝔹-compare`.
+`𝔹-compare-𝔹²`.
 
 ```
 𝕗-is-zero : 𝔹-to-𝔽2 𝕗 ≡ zero
@@ -590,11 +406,11 @@ machine-checked, facts to yield a preliminary definition for
 𝕥-is-one : 𝔹-to-𝔽2 𝕥 ≡ suc zero
 𝕥-is-one = refl
 
-𝔹-compare₀ : 𝔹² → 𝔹²
-𝔹-compare₀ (𝕗 , 𝕗) = R-to-𝔹² is=
-𝔹-compare₀ (𝕗 , 𝕥) = R-to-𝔹² is<
-𝔹-compare₀ (𝕥 , 𝕗) = R-to-𝔹² is>
-𝔹-compare₀ (𝕥 , 𝕥) = 𝔹-compare₀ (𝕗 , 𝕗)
+𝔹-compare-𝔹²₀ : 𝔹² → 𝔹²
+𝔹-compare-𝔹²₀ (𝕗 , 𝕗) = R-to-𝔹² is=
+𝔹-compare-𝔹²₀ (𝕗 , 𝕥) = R-to-𝔹² is<
+𝔹-compare-𝔹²₀ (𝕥 , 𝕗) = R-to-𝔹² is>
+𝔹-compare-𝔹²₀ (𝕥 , 𝕥) = 𝔹-compare-𝔹²₀ (𝕗 , 𝕗)
 ```
 
 [Conal, I'm disatisfied with this because it feels like I did my equational reasoning "outside"
@@ -603,18 +419,18 @@ machine-checked, facts to yield a preliminary definition for
 Simplifying, this yields
 
 ```
-𝔹-compare₁ : 𝔹² → 𝔹²
-𝔹-compare₁ (𝕗 , 𝕗) = (𝕗 , 𝕥)
-𝔹-compare₁ (𝕗 , 𝕥) = (𝕥 , 𝕗)
-𝔹-compare₁ (𝕥 , 𝕗) = (𝕗 , 𝕗)
-𝔹-compare₁ (𝕥 , 𝕥) = (𝕗 , 𝕥)
+𝔹-compare-𝔹²₁ : 𝔹² → 𝔹²
+𝔹-compare-𝔹²₁ (𝕗 , 𝕗) = (𝕗 , 𝕥)
+𝔹-compare-𝔹²₁ (𝕗 , 𝕥) = (𝕥 , 𝕗)
+𝔹-compare-𝔹²₁ (𝕥 , 𝕗) = (𝕗 , 𝕗)
+𝔹-compare-𝔹²₁ (𝕥 , 𝕥) = (𝕗 , 𝕥)
 ```
 
 This can be simplified to use the "fork" operator `▵`.
 
 ```
-𝔹-compare₂ : 𝔹² → 𝔹²
-𝔹-compare₂ = comp-fst ▵ comp-snd
+𝔹-compare-𝔹²₂ : 𝔹² → 𝔹²
+𝔹-compare-𝔹²₂ = comp-fst ▵ comp-snd
   where
     comp-fst : 𝔹² → 𝔹
     comp-fst (𝕗 , 𝕗) = 𝕗
@@ -629,126 +445,115 @@ This can be simplified to use the "fork" operator `▵`.
     comp-snd (𝕥 , 𝕥) = 𝕥
 ```
 
-
 We now use our knowledge of boolean function primitives and the "truth table" evident
 in the definition above to yield:
 
-```
-𝔹-compare : 𝔹² → 𝔹²
-𝔹-compare = (∧ ∘ first not) ▵ (not ∘ xor)
-```
-
-We are now in a position to define a boolean comparison-with-carry function.
+[TODO: make this more explicit]
 
 ```
-𝔹-compareᶜ₁ : 𝔹² × 𝔹² → 𝔹²
-𝔹-compareᶜ₁ ((is<′ , is=′) , a , b) with is<′
-... | 𝕥 = (𝕥 , 𝕗)
-... | 𝕗 with is=′
-...       | 𝕗 = (𝕗 , 𝕗)
-...       | 𝕥 = 𝔹-compare (a , b)
-```
-
-
-
-```
-𝔹-compareᶜ₂ : 𝔹² × 𝔹² → 𝔹²
-𝔹-compareᶜ₂ ((𝕗 , 𝕗) , a,b) = (𝕗 , 𝕗)
-𝔹-compareᶜ₂ ((𝕗 , 𝕥) , a,b) = 𝔹-compare a,b
-𝔹-compareᶜ₂ ((𝕥 , 𝕗) , a,b) = (𝕥 , 𝕗)
-𝔹-compareᶜ₂ ((𝕥 , 𝕥) , a,b) = (𝕥 , 𝕗)
-```
-
-[It seems I always end up playing a game where I go from an explicit
-"truth table" style definition down to some combination of the
-primitive gates.
-
-Would the idea be to create a "solver" of some kind that guarantees to
-give us the minimum number of gates? This whole sub-problem seems like
-one that, if solved, would be immensely reusable.]
-
-Let's fully expand the truth table.
-
-```
-𝔹-compareᶜ₃ : 𝔹² × 𝔹² → 𝔹²
-𝔹-compareᶜ₃ ((𝕗 , 𝕗) , a,b) = (𝕗 , 𝕗)
-𝔹-compareᶜ₃ ((𝕗 , 𝕥) , a,b) = 𝔹-compare a,b
-𝔹-compareᶜ₃ ((𝕥 , 𝕗) , a,b) = (𝕥 , 𝕗)
-𝔹-compareᶜ₃ ((𝕥 , 𝕥) , a,b) = (𝕥 , 𝕗)
-```
-
-```
-𝔹-compareᶜ : 𝔹² × 𝔹²  → 𝔹²
-𝔹-compareᶜ =  cond ∘ (c₁ ▵ ((cond ∘ (c₂ ▵ (tru ▵ fls) ▵ (𝔹-compare ∘ exr))) ▵ (fls ▵ fls)))
-  where
-     c₁ :  𝔹² × 𝔹² → 𝔹
-     c₁ = ∧ ∘ (not ⊗ not) ∘ exl
-
-     c₂ : 𝔹² × 𝔹² → 𝔹
-     c₂ = ∧ ∘ (not ⊗ id) ∘ exl
-
-     fls : {a : Set} → a → 𝔹
-     fls _ = 𝕗
-
-     tru : {a : Set} → a → 𝔹
-     tru _ = 𝕥
-```
-
-```
-comparisonWithCarryB : ComparisonWithCarry 𝔹²-to-R 𝔹-to-𝔽2
-comparisonWithCarryB = 𝔹-compareᶜ ⊣ isB
-  where
-    isB : is-compare-with-carry 𝔹²-to-R 𝔹-to-𝔽2 𝔹-compareᶜ
-    isB = p
-      where
-        q :  𝔹²-to-R ∘ 𝔹-compare ≗ 𝔽-compare ∘ (𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2)
-        q (𝕗 , 𝕗) = refl
-        q (𝕗 , 𝕥) = refl
-        q (𝕥 , 𝕗) = refl
-        q (𝕥 , 𝕥) = refl
-
-        p : 𝔹²-to-R ∘ 𝔹-compareᶜ ≗ 𝔽-compareᶜ ∘ (𝔹²-to-R ⊗ 𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2)
-        p ((𝕗 , 𝕗) , a,b) = refl
-        p ((𝕗 , 𝕥) , a,b) = q a,b
-        p ((𝕥 , 𝕗) , a,b) = refl
-        p ((𝕥 , 𝕥) , a,b) = refl
-
+𝔹-compare-𝔹² : 𝔹² → 𝔹²
+𝔹-compare-𝔹² = (∧ ∘ first not) ▵ (not ∘ xor)
 ```
 
 ## 3-bit representation of `R`
 
-It seems common in traditional hardware design to use 3-bits to
-represent the values of the `R` type.
+It seems common in traditional hardware design to use a "one-hot"
+3-bit representation of the `R` type. That is, three wires only one of
+which can be true, the rest being false.
 
 ```
 𝔹³ : Set
 𝔹³ = 𝔹 × 𝔹 × 𝔹
+```
+
+Defining `R-to-𝔹³` is straightforward.
+
+```
+R-to-𝔹³ : R → 𝔹³
+R-to-𝔹³ is< = (𝕥 , 𝕗 , 𝕗)
+R-to-𝔹³ is= = (𝕗 , 𝕥 , 𝕗)
+R-to-𝔹³ is> = (𝕗 , 𝕗 , 𝕥)
+```
+
+However, the inverse function is even trickier to define than
+`𝔹²-to-R`. We want a total function but there is a even more
+redundancy in the representation then for the 2-bit case since 3 bits
+can represent 8 different values. We must have cases for when there is
+more than "one hot wire" and we must also consider the case where none
+of them are "hot".
+
+We choose `is<` as our "no hot" case and use a priority-based encoding
+for the other cases.  Each of the positions in the triple denote
+`is<`, `is=` and `is>` respectively, but this is also the order of
+priority.
+
+If a `𝕥` appears in the `is<` position then it overrides whatever is
+in the other two positions.  The `is=` is similar. It has priority
+over the `is>` value but only when a `𝕗` appears in the `is<`
+position. This leads us to the following definition:
+
+
+```
 
 𝔹³-to-R : 𝔹³ → R
 𝔹³-to-R (𝕗 , 𝕗 , 𝕗) = is<
 𝔹³-to-R (𝕥 , _ , _) = is<
 𝔹³-to-R (𝕗 , 𝕥 , _) = is=
 𝔹³-to-R (𝕗 , 𝕗 , 𝕥) = is>
-
-
-R-to-𝔹³ : R → 𝔹³
-R-to-𝔹³ is< = (𝕥 , 𝕗 , 𝕗)
-R-to-𝔹³ is= = (𝕗 , 𝕥 , 𝕗)
-R-to-𝔹³ is> = (𝕗 , 𝕗 , 𝕥)
-
-
-
-𝔹-compare-𝔹³ : 𝔹² → 𝔹³
-𝔹-compare-𝔹³ = (∧ ∘ first not) ▵ (not ∘ xor) ▵ (∧ ∘ second not)
-
-𝔹-compare-𝔹³ᶜ₀ : 𝔹³ × 𝔹² → 𝔹³
-𝔹-compare-𝔹³ᶜ₀ ((_ , _ , 𝕥) , a,b) = (𝕗 , 𝕗 , 𝕥)
-𝔹-compare-𝔹³ᶜ₀ ((_ , 𝕥 , _) , a,b) = 𝔹-compare-𝔹³ a,b
-𝔹-compare-𝔹³ᶜ₀ ((𝕥 , _ , _) , a,b) = (𝕥 , 𝕗 , 𝕗)
-𝔹-compare-𝔹³ᶜ₀ ((_ , _ , _) , a,b) = (𝕥 , 𝕗 , 𝕗)
 ```
 
+We are now in a position to define `𝔹-compare-𝔹³`.
+
+[TODO: Consider not defining this at all at this point and wait
+for the later approach]
+
+```
+𝔹-compare-𝔹³ : 𝔹² → 𝔹³
+𝔹-compare-𝔹³ = (∧ ∘ first not) ▵ (not ∘ xor) ▵ (∧ ∘ second not)
+```
+
+## Why the multi-digit comparison with carry approach is undesirable
+
+I mentioned earlier that I tried an approach where the comparison
+function for each digit was given a carry in. This proved to be
+undesirable and in this section I will show you why.
+
+I was unduly influenced by the ripple adder circuit and also the
+"obvious" observation that one would want, when comparing to
+multi-digit numbers, to examine them in order from most significant
+digit to least.
+
+Following this line of thought, when comparing digit by digit, we
+would require the result of the comparison on the previous digit to be
+carried in to the comparison on the current digit. A moment's thought
+leads to this type signature:
+
+    𝔽-compareᶜ : {i,j : ℕ} → R × 𝔽² i,j → R
+
+Even at this point I was uneasy since the carry-in value was of type
+`R`, which is also the result type. This is quite different to the
+case for ripple adders where there is a distinction between the result
+of adding two digits and the carry-out value of adding those two
+digits. That is, an adder for a digit produces a pair of results.
+
+Also something quite odd happens when one considers the case where the
+carry-in value is `is<` or `is>`.
+
+    𝔽-compareᶜ (is< , _ , _) = is<
+    𝔽-compareᶜ (is> , _ , _) = is>
+
+I took the refinement process through to its logical conclusion, and
+it led to an implementation in hardware that sequentially composed
+circuits that simply passed through the previous result. However this
+came at the cost of extra circuitry that increased the _depth_ of the
+circuit, using the definition that _depth_ of a circuit is the longest
+sequence of gates connected by wires.
+
+
 ## A monoid on `R`
+
+
+
 
 
 Let's try to define `R` as a monoid.
@@ -761,15 +566,10 @@ open import Algebra.Definitions {A = R} (_≡_)
 
 ```
 
--- Curry : {α : Set} → (α × α → α) → (α → α → α)
--- Curry
-
-
 ▲ : R × R → R
 ▲ (is= , r₂) = r₂
 ▲ (is< , _)  = is<
 ▲ (is> , _)  = is>
-
 
 _▲_ : Op₂ R
 _▲_ = curry ▲
@@ -804,28 +604,6 @@ _▲_ = curry ▲
 
 Now that we have defined this monoid we can do a fold over a perfect
 binary tree of comparators for multiple digits.
-
-## Carry in/out formulation was a false start
-
-I didn't quite get the type for a comparator right the first time
-through.  I had `{k : ℕ} → R × 𝔽² k , k → R`. I now don't think we
-even need a carry-in.  I think the first thing we should do is
-pairwise compare the digits using `𝔽-compare` and then combine all the
-results using `_∙_`.
-
-I was unduly influenced by the type for adders. I should have realised
-that there was no need for carry-in when I had the "insight" that the
-output was of type `R`. I mistakenly thought this was a special case
-where the carry-out _was_ the output.
-
-However, another way to look at it was that the carry-in/carry-out
-concept just doesn't apply in this case.  Instead we should perform
-many comparisons in parallel and then combine the results cleverly.
-
-An interesting question to ask at this point is why addition
-_requires_ carry-in/carry-out. I think the answer is that carries in
-addition _propagate_.  However, a simple look `_∙_` shows us that no
-values propagate themselves.
 
 ## A fresh start
 
@@ -1016,7 +794,7 @@ opᴮ³-is-monoid-op = λ { ((𝕥 , _ , _) , _) → refl
 
 ```
 𝔹²-compare : 𝔹² × 𝔹² → 𝔹²
-𝔹²-compare = 𝔹-compare ●̂ 𝔹-compare
+𝔹²-compare = 𝔹-compare-𝔹² ●̂ 𝔹-compare-𝔹²
   where
     _●̂_ : ∀ {τₘ τₙ} → D 𝔹² τₘ → D 𝔹² τₙ  → D 𝔹² (τₘ × τₙ)
     _●̂_ = mk-●̂ opᴮ
@@ -1026,7 +804,7 @@ And now a 4-bit comparison.
 
 ```
 𝔹⁴-compare : (𝔹² × 𝔹²) × (𝔹² × 𝔹²) → 𝔹²
-𝔹⁴-compare = (𝔹-compare ●̂ 𝔹-compare) ●̂ (𝔹-compare ●̂ 𝔹-compare)
+𝔹⁴-compare = (𝔹-compare-𝔹² ●̂ 𝔹-compare-𝔹²) ●̂ (𝔹-compare-𝔹² ●̂ 𝔹-compare-𝔹²)
   where
     _●̂_ : ∀ {τₘ τₙ} → D 𝔹² τₘ → D 𝔹² τₙ  → D 𝔹² (τₘ × τₙ)
     _●̂_ = mk-●̂ opᴮ
@@ -1044,64 +822,14 @@ open import Categorical.Homomorphism
            ; Bool to 𝔹̂; ∧ to ⟨∧⟩; ∨ to ⟨∨⟩; xor to ⟨⊕⟩
            )
 
-τĈⁱ : Ty → Ty → Ty
-τĈⁱ ρ τ =  ρ × τ × τ
-
-Ĉ : Ty → Ty → Set
-Ĉ ρ τ = τĈⁱ ρ τ ↦ ρ
+D̂ : Ty → Ty → Set
+D̂ ρ τ = τ × τ ↦ ρ
 
 𝔹̂² : Ty
 𝔹̂² = 𝔹̂ × 𝔹̂
 
-𝔹̂³ : Ty
-𝔹̂³ = 𝔹̂ × 𝔹̂ × 𝔹̂
-```
-
-```
 𝔹-compareC : 𝔹̂² ↦ 𝔹̂²
 𝔹-compareC = (∧ ∘ first not) ▵ (not ∘ xor)
-
-𝔹-compareᶜC : Ĉ (𝔹̂ × 𝔹̂) 𝔹̂
-𝔹-compareᶜC = cond ∘ (c₁ ▵ ((cond ∘ (c₂ ▵ (tru ▵ fls) ▵ (𝔹-compareC ∘ exr))) ▵ (fls ▵ fls)))
-  where
-     c₁ :  𝔹̂² × 𝔹̂² ↦ 𝔹̂
-     c₁ = ∧ ∘ (not ⊗ not) ∘ exl
-
-     c₂ : 𝔹̂² × 𝔹̂² ↦ 𝔹̂
-     c₂ = ∧ ∘ (not ⊗ id) ∘ exl
-
-     fls : {a : Ty} → a ↦ 𝔹̂
-     fls  = false ∘ !
-
-     tru : {a : Ty} → a ↦ 𝔹̂
-     tru = true ∘ !
-```
-
-
-```
-𝔹-compare-𝔹³C : 𝔹̂² ↦ 𝔹̂³
-𝔹-compare-𝔹³C = (∧ ∘ first not) ▵ (not ∘ xor) ▵ (∧ ∘ second not)
-
-𝔹-compare-𝔹³ᶜC : 𝔹̂³ × 𝔹̂² ↦ 𝔹̂³
-𝔹-compare-𝔹³ᶜC = cond ∘ (c₁ ▵ ((cond ∘ (c₂ ▵ (tru ▵ fls ▵ fls) ▵ (𝔹-compare-𝔹³C ∘ exr))) ▵ (fls ▵ fls ▵ tru)))
-  where
-     c₁ :  𝔹̂³ × 𝔹̂² ↦ 𝔹̂
-     c₁ = exr ∘ exr ∘ exl
-
-     c₂ : 𝔹̂³ × 𝔹̂² ↦ 𝔹̂
-     c₂ = exl ∘ exr ∘ exl
-
-     fls : {a : Ty} → a ↦ 𝔹̂
-     fls  = false ∘ !
-
-     tru : {a : Ty} → a ↦ 𝔹̂
-     tru = true ∘ !
-```
-
-```
-D̂ : Ty → Ty → Set
-D̂ ρ τ = τ × τ ↦ ρ
-
 
 mk-■̂ : ∀ {ρ τₘ τₙ} → (ρ × ρ ↦ ρ) → D̂ ρ τₘ → D̂ ρ τₙ → D̂ ρ (τₘ × τₙ)
 mk-■̂ op compareₘ compareₙ = op ∘ (compareₘ ⊗ compareₙ) ∘ transpose
@@ -1138,9 +866,6 @@ example : ∀ {a b : Ty} → String → (c : a ↦ b) → IO {0ℓ} _
 example name c = T.example name (Fₘ c)
 
 main = run do
-  example "boolean-compare-with-carry" 𝔹-compareᶜC
-  example "boolean-3-compare" 𝔹-compare-𝔹³C
-  example "boolean-3-compare-with-carry" 𝔹-compare-𝔹³ᶜC
   example "boolean-compare" 𝔹-compareC
   example "4-bit-compare" 𝔹⁴-compareC
 ```
