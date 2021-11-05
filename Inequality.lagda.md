@@ -329,6 +329,9 @@ R-to-𝔹² is= = (𝕗 , 𝕥)
 R-to-𝔹² is> = (𝕗 , 𝕗)
 ```
 
+
+
+
 There are 4 values that can be represented by a pair of booleans, so
 one will necessarily not appear on the right hand side of this
 definition. Using the representation we have chosen it is cleary `(𝕥 ,
@@ -385,7 +388,7 @@ Our commutative tower now looks like this
         |                      |
        toℕ²                    id
         |                      |
-       𝔽 i,j --- 𝔽-compare --> R
+       𝔽 2,2 --- 𝔽-compare --> R
         ^                      ^
         |                      |
    𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2        𝔹²-to-R
@@ -549,27 +552,122 @@ came at the cost of extra circuitry that increased the _depth_ of the
 circuit, using the definition that _depth_ of a circuit is the longest
 sequence of gates connected by wires.
 
+In the next section we will see an alternative approach which
+eventually yields circuits with more gates (i.e. they perform more
+_work_) but have less _depth_.
+
+## The trade-off between work and depth in hardware and its relationship with semigroup folds.
+
+CPUs, despite having multiple cores, still present a sequential
+interface to the programmer. However, in the domain of hardware,
+designing for parallism is the more natural paradigm.
+
+One can often take a circuit with a lot of sequential composition and
+change its design to an equivalent circuit with more gates but less
+_depth_. An interesting question is: what high level design technique
+leads naturally to more parallelism in circuits once the refinement
+process has been carried out to its conclusion?
+
+Surprisingly, at least to me, the answer to this question involves the
+mathematical structure known as the semigroup. A semigroup consists of
+a set of values of type, say, `τ` which are closed over an
+_associative binary operator_ with signature `⊕ : τ → τ → τ`. It turns
+out that the _associativity_ of the operator is the at heart of the
+technique.
+
+Consider the following combination of values:
+
+    a ⊕ b ⊕ c ⊕ d
+
+The associativity of the `⊕` ensures that the following expressions
+all yield the same result: `(((a ⊕ b) ⊕ c) ⊕ d)`, `(a ⊕ (b ⊕ (c ⊕
+d)))` and `((a ⊕ b) ⊕ (c ⊕ d))`. Which of these is the most efficient?
+Which of these has the most parallelism. This is not something that
+can be answered without a _cost model_ and a simple _operational
+semantics_.
+
+We will assume that any sub-expression can be evaluated if it is of
+the form `x ⊕ y`. Each one of these will "cost" one "step". Also,
+multiple such sub-expressions can be evaluated in parallel as long as
+they do not contain further sub-expressions.
+
+Using this simple operational semantics and cost model we can see that
+`(a ⊕ (b ⊕ (c ⊕ d)))` takes 3 steps to evaluate and that it each
+step only one sub-expression is evaluated. This is made explicit
+below.
+
+
+      a ⊕ (b ⊕ (c ⊕ d))
+    ≡ a ⊕ (b ⊕ e)     where e = c ⊕ d
+    ≡ a ⊕ f           where f = b ⊕ e
+    ≡ g               where g = a ⊕ f
+
+
+The evaluation of `(((a ⊕ b) ⊕ c) ⊕ d)` is similar except that
+evaluation order is slightly different. However, evaluating `((a ⊕ b)
+⊕ (c ⊕ d))` is a different story.
+
+      (a ⊕ b) ⊕ (c ⊕ d)
+    ≡ e ⊕ f     where e = a ⊕ b and f = c ⊕ d
+    ≡ g               where g = e ⊕ f
+
+This takes only 2 steps to evaluate because, in the first step `a
+⊕ b` and `c ⊕ d` can be evaluated in parallel.
+
+All of these expressions are _folds_ over values using the `⊕`
+operator. In general, a fold over `2ⁿ` values (for some `n`) can be
+performed in `log n` steps using the evaluation strategy above.
+
+The operational semantics and cost model presented above can be
+refined down to the level of circuits.  Parallel evaluations
+correspond to computations performed by gates at the same depth in the
+circuit, and the depth of the circuit corresponds to the number of
+steps in the evaluation.
+
+In the next section we investigate whether the `R` data type is a
+semigroup. We discover that is a slighlty embelished structure known
+as a _monoid_. A monoid, in addition to being closed over an associate
+binary operator has a distinguished value, `e`, called the _identity_ such that
+for all `a` both `a ⊕ e = a` and `e ⊕ a = a`.
 
 ## A monoid on `R`
 
+Can we find an associative binary operator on `R`? Yes, it turns
+out. We can do it by investigating what happens when we pair two
+comparisons together.
 
+Say we have compared `a` and `c` and also `b` and `d` and got a
+result.  What should we say is the result of compareing `(a, b)` and
+(c, d)`.  For inspiration we consider multi-digit representations of
+numbers.  `13 < 23` precisely because `1 < 2`. But why is `13 <
+14`?  The first digit is equal. Thus we must consult the second digit
+for the final result. Another source of inspiration would be to
+consider lexicographic ordering of strings.
 
+This leads to the following definition of the operator, which we have
+called `▲`.
 
+```
+▲ : R × R → R
+▲ (is= , r₂) = r₂
+▲ (is< , _)  = is<
+▲ (is> , _)  = is>
+```
 
-Let's try to define `R` as a monoid.
+By considering every pair of possible inputs (for a total of 9 cases)
+one can convince oneself that this operator is associative and that
+`is=` is the identity element. However, we can gain even more
+assurance by proving this in Agda.
+
+To do this we use the Standard Library's `Algebra` modules. This
+requires we uncurry the `▲` operator as their definitions are only
+defined in terms of uncurried functions.
 
 ```
 open import Algebra.Core
 open import Algebra.Structures {A = R} (_≡_)
 open import Algebra.Definitions {A = R} (_≡_)
-```
 
-```
-
-▲ : R × R → R
-▲ (is= , r₂) = r₂
-▲ (is< , _)  = is<
-▲ (is> , _)  = is>
 
 _▲_ : Op₂ R
 _▲_ = curry ▲
@@ -602,12 +700,23 @@ _▲_ = curry ▲
 ▲-isMonoid = record { isSemigroup = ▲-isSemigroup; identity = ▲-identity }
 ```
 
-Now that we have defined this monoid we can do a fold over a perfect
-binary tree of comparators for multiple digits.
+The monoid we have just defined will come in handy but only once we
+get to the stage of combining primitive comparison circuits
+together. But before we do that we will need just such a primitive
+comparison circuit.
 
-## A fresh start
+## 1-bit comparison functions
 
-We now just want to refine `𝔽-compare` down to a 1-bit compare function.
+We do that by refining `𝔽-compare` down to a 1-bit compare function.
+
+However, before we do that I'll introduce some more abstract
+definitions that will allow us to refine from `𝔽-compare` down to an
+arbitrary circuit.
+
+### Abstract comparison functions
+
+There are (infinite) ways we can refine from `𝔽-compare` to a concrete `compare` function.
+This is captured the extended commutative tower below:
 
 
                 ℕ² --- ℕ-compare ----> R
@@ -622,11 +731,24 @@ We now just want to refine `𝔽-compare` down to a 1-bit compare function.
                 |                      |
               τ × τ  --- compare ----> ρ
 
+Function `μ` is a meaning function that maps from a value of an arbitrary type
+`τ` back to a finite set of size `k`, while `ν` is a meaning function which
+maps from an arbitrary `ρ` type to the `R` type.
+
+We will want to prove that this diagram commutes for many different
+`μ` and `ν` values so we introduce a function `is-compare` that yields
+the proposition we wish to prove.
 
 ```
 is-compare : {ρ τ : Set} {k : ℕ} (μ : τ → 𝔽 k) (ν : ρ → R) (compare : τ × τ → ρ) → Set
 is-compare μ ν compare = ν ∘ compare ≗ 𝔽-compare ∘ (μ ⊗ μ)
+```
 
+We also introduce a new record, `Comparison`, which contains as its
+fields a `compare` function and the proof that it is a compare
+function (i.e. satisfies `is-compare μ ν compare`).
+
+```
 record Comparison {ρ τ : Set} {k : ℕ} (μ : τ → 𝔽 k) (ν : ρ → R): Set where
   constructor _⊣_
   field
@@ -634,37 +756,50 @@ record Comparison {ρ τ : Set} {k : ℕ} (μ : τ → 𝔽 k) (ν : ρ → R): 
     is : is-compare μ ν compare
 ```
 
+### Comparing single bits
 
-I want to make `μ` concrete but leave `ρ` unspecified for the moment.
+We know that we want to compare single bits but, at this point, it is
+not clear what would be the best type represent `R` with. In fact,
+this question may not have a definitive answer. Accordingly we set `τ
+= 𝔹` and `μ = 𝔹-to-𝔽2`, but we leave `ρ` and `ν` abstract.
 
+We will define a function called `mk-𝔹-Comparison` which, given a `ν`
+will produce a value of type `Comparison 𝔹-to-𝔽2 ν`. As it turns out,
+in order to prove the requisite properties we will require more than
+just `ν` to be provided. We also require `ν⁻¹` and a proof of right
+invertibility i.e. `ν ∘ ν⁻¹ ≗ id`.
+
+A convenient way to do this is to package up these three things into a Agda record type.
 
 ```
-record Nu (ρ : Set) : Set where
+record R-Rep (ρ : Set) : Set where
   field
     ν   : ρ → R
     ν⁻¹ : R → ρ
     right-invertible : ν ∘ ν⁻¹ ≗ id
     -- ρ can have redundant values that map to the 3 values of R
     -- however this means it's not left invertible. i.e.  it is not true that ν⁻¹ ∘ ν ≗ id
+```
 
-𝔹-compare-ρ : {ρ : Set} → (nu : Nu ρ) → 𝔹² → ρ
-𝔹-compare-ρ nu (𝕗 , 𝕗) = (Nu.ν⁻¹ nu) is=
-𝔹-compare-ρ nu (𝕗 , 𝕥) = (Nu.ν⁻¹ nu) is<
-𝔹-compare-ρ nu (𝕥 , 𝕗) = (Nu.ν⁻¹ nu) is>
-𝔹-compare-ρ nu (𝕥 , 𝕥) = (Nu.ν⁻¹ nu) is=
+```
+𝔹-compare-ρ : {ρ : Set} → (nu : R-Rep ρ) → 𝔹² → ρ
+𝔹-compare-ρ rr (𝕗 , 𝕗) = (R-Rep.ν⁻¹ rr) is=
+𝔹-compare-ρ rr (𝕗 , 𝕥) = (R-Rep.ν⁻¹ rr) is<
+𝔹-compare-ρ rr (𝕥 , 𝕗) = (R-Rep.ν⁻¹ rr) is>
+𝔹-compare-ρ rr (𝕥 , 𝕥) = (R-Rep.ν⁻¹ rr) is=
 
-is-𝔹-compare : {ρ : Set} → (nu : Nu ρ) → Set
-is-𝔹-compare nu = is-compare 𝔹-to-𝔽2 (Nu.ν nu) (𝔹-compare-ρ nu)
+is-𝔹-compare : {ρ : Set} → (rr : R-Rep ρ) → Set
+is-𝔹-compare rr = is-compare 𝔹-to-𝔽2 (R-Rep.ν rr) (𝔹-compare-ρ rr)
 
 
-𝔹²-nu : Nu 𝔹²
-𝔹²-nu = record { ν = 𝔹²-to-R ; ν⁻¹ = R-to-𝔹² ; right-invertible = λ { is< → refl ; is= → refl ; is> → refl } }
+𝔹²-rr : R-Rep 𝔹²
+𝔹²-rr = record { ν = 𝔹²-to-R ; ν⁻¹ = R-to-𝔹² ; right-invertible = λ { is< → refl ; is= → refl ; is> → refl } }
 
-𝔹³-nu : Nu 𝔹³
-𝔹³-nu = record { ν = 𝔹³-to-R ; ν⁻¹ = R-to-𝔹³ ; right-invertible = λ { is< → refl ; is= → refl ; is> → refl } }
+𝔹³-rr : R-Rep 𝔹³
+𝔹³-rr = record { ν = 𝔹³-to-R ; ν⁻¹ = R-to-𝔹³ ; right-invertible = λ { is< → refl ; is= → refl ; is> → refl } }
 
-nu-to-is-𝔹-compare : {ρ : Set} → (nu : Nu ρ) → is-𝔹-compare nu
-nu-to-is-𝔹-compare nu =
+rr-to-is-𝔹-compare : {ρ : Set} → (rr : R-Rep ρ) → is-𝔹-compare rr
+rr-to-is-𝔹-compare rr =
     λ { f,f@(𝕗 , 𝕗) → p {f,f} {is=} refl refl
       ; f,t@(𝕗 , 𝕥) → p {f,t} {is<} refl refl
       ; t,f@(𝕥 , 𝕗) → p {t,f} {is>} refl refl
@@ -674,15 +809,15 @@ nu-to-is-𝔹-compare nu =
   where
     open ≡-Reasoning
     p : ∀ {a b}
-        → 𝔹-compare-ρ nu a ≡ Nu.ν⁻¹ nu b
+        → 𝔹-compare-ρ rr a ≡ R-Rep.ν⁻¹ rr b
         → b ≡ 𝔽-compare ((𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2) a)
-        → Nu.ν nu (𝔹-compare-ρ nu a) ≡ 𝔽-compare ((𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2) a)
+        → R-Rep.ν rr (𝔹-compare-ρ rr a) ≡ 𝔽-compare ((𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2) a)
     p {a} {b} eq eq2 =
       begin
-        Nu.ν nu (𝔹-compare-ρ nu a)
-      ≡⟨ cong (Nu.ν nu) eq ⟩
-        (Nu.ν nu ∘ Nu.ν⁻¹ nu) b
-      ≡⟨ Nu.right-invertible nu b ⟩
+        R-Rep.ν rr (𝔹-compare-ρ rr a)
+      ≡⟨ cong (R-Rep.ν rr) eq ⟩
+        (R-Rep.ν rr ∘ R-Rep.ν⁻¹ rr) b
+      ≡⟨ R-Rep.right-invertible rr b ⟩
         id b
       ≡⟨⟩
         b
@@ -691,19 +826,19 @@ nu-to-is-𝔹-compare nu =
       ∎
 ```
 
-We can now plug different `Nu` values to create comparison functions with `ρ = 𝔹²`
+We can now plug different `R-Rep` values to create comparison functions with `ρ = 𝔹²`
 and `ρ = 𝔹³` respectively.
 
 
 ```
-mk-𝔹-Comparison : {ρ : Set} → (nu : Nu ρ) → Comparison 𝔹-to-𝔽2 (Nu.ν nu)
-mk-𝔹-Comparison {ρ} nu = 𝔹-compare-ρ nu ⊣ (nu-to-is-𝔹-compare nu)
+mk-𝔹-Comparison : {ρ : Set} → (rr : R-Rep ρ) → Comparison 𝔹-to-𝔽2 (R-Rep.ν rr)
+mk-𝔹-Comparison {ρ} rr = 𝔹-compare-ρ rr ⊣ (rr-to-is-𝔹-compare rr)
 
 𝔹-Comparison-𝔹² : Comparison 𝔹-to-𝔽2 𝔹²-to-R
-𝔹-Comparison-𝔹² = mk-𝔹-Comparison 𝔹²-nu
+𝔹-Comparison-𝔹² = mk-𝔹-Comparison 𝔹²-rr
 
 𝔹-Comparison-𝔹³ : Comparison 𝔹-to-𝔽2 𝔹³-to-R
-𝔹-Comparison-𝔹³ = mk-𝔹-Comparison 𝔹³-nu
+𝔹-Comparison-𝔹³ = mk-𝔹-Comparison 𝔹³-rr
 ```
 
 ## And now for the combinators
@@ -869,3 +1004,73 @@ main = run do
   example "boolean-compare" 𝔹-compareC
   example "4-bit-compare" 𝔹⁴-compareC
 ```
+
+
+## Appendix
+
+
+### Representing the `R` type using booleans and dependent products
+
+I mentioned earlier that there was a little redundancy in representing
+the `R` type using `𝔹²` and a lot of redundancy representing it with
+`𝔹³`. In this section I present a way to represent `R` in `𝔹³` with no
+redundancy by using a dependent product. The first element of the
+dependent product is just `𝔹³` while the second element is a proof
+that the triple is "one-hot" which means that precisely one of the
+boolean values in the triple is true while the rest are false.
+
+The function `hotness` returns the number of `𝕥` values in the triple
+and can range from 0 to 3.
+
+```
+open import Data.Product using (Σ)
+
+hotness : 𝔹 × 𝔹 × 𝔹 → ℕ
+hotness (b₁ , b₂ , b₃) = val b₁ + val b₂ + val b₃
+  where
+    val : 𝔹 → ℕ
+    val 𝕗 = 0
+    val 𝕥 = 1
+```
+
+We then define the dependent product. The _type_ of the second element
+depends on the _value_ of the first. For example if the _value_ of the
+first element is `(𝕥 , 𝕗 , 𝕗)` then the _type_ of the second element
+is `hotness (𝕥 , 𝕗 , 𝕗) ≡ 1`.
+
+```
+Σ𝔹³ : Set
+Σ𝔹³ = Σ 𝔹³ (λ x → hotness x ≡ 1)
+```
+
+We can then define the conversion functions to and from `Σ𝔹³`.
+
+```
+Σ𝔹³-to-R : Σ𝔹³ → R
+Σ𝔹³-to-R ((𝕥 , 𝕗 , 𝕗) , refl) = is<
+Σ𝔹³-to-R ((𝕗 , 𝕥 , 𝕗) , refl) = is=
+Σ𝔹³-to-R ((𝕗 , 𝕗 , 𝕥) , refl) = is>
+
+R-to-Σ𝔹³ : R → Σ𝔹³
+R-to-Σ𝔹³ is< = ( (𝕥 , 𝕗 , 𝕗) , refl)
+R-to-Σ𝔹³ is= = ( (𝕗 , 𝕥 , 𝕗) , refl)
+R-to-Σ𝔹³ is> = ( (𝕗 , 𝕗 , 𝕥) , refl)
+```
+
+Pleasingly, using this representation, we can prove invertibility in
+both directions.
+
+```
+Σ𝔹³-to-R∘R-to-Σ𝔹³ : Σ𝔹³-to-R ∘ R-to-Σ𝔹³ ≗ id
+Σ𝔹³-to-R∘R-to-Σ𝔹³ is<  = refl
+Σ𝔹³-to-R∘R-to-Σ𝔹³ is=  = refl
+Σ𝔹³-to-R∘R-to-Σ𝔹³ is>  = refl
+
+R-to-Σ𝔹∘Σ𝔹³-to-R : R-to-Σ𝔹³ ∘ Σ𝔹³-to-R ≗ id
+R-to-Σ𝔹∘Σ𝔹³-to-R ( (𝕥 , 𝕗 , 𝕗) , refl) = refl
+R-to-Σ𝔹∘Σ𝔹³-to-R ( (𝕗 , 𝕥 , 𝕗) , refl) = refl
+R-to-Σ𝔹∘Σ𝔹³-to-R ( (𝕗 , 𝕗 , 𝕥) , refl) = refl
+```
+
+However, I don't yet know how to make this work with Conal's work on
+Compiling to Categories. This is an open problem at this point.
