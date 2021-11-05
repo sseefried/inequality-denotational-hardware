@@ -214,7 +214,6 @@ At this point I made my second design mistake. It seemed like some notion of
 _carry-in_ was necessary when doing less-than-or-equal-to on multi-digit
 numbers.
 
-
 I reasoned that the necessity of carry-in implies that carry-out was also
 necessary so that it may be fed into the comparison of the next digit
 position.
@@ -754,20 +753,30 @@ record Comparison {ρ τ : Set} {k : ℕ} (μ : τ → 𝔽 k) (ν : ρ → R): 
   field
     compare : τ × τ → ρ
     is : is-compare μ ν compare
+
+  𝔽-compare-sim-proof : μ ⊗ μ ⇉ ν
+  𝔽-compare-sim-proof = arr compare 𝔽-compare is
+
+  sim-proof : toℕ² ∘ (μ ⊗ μ) ⇉ ν
+  sim-proof = 𝔽-compare⇉ ◎ 𝔽-compare-sim-proof
 ```
+
+Note the definition of `sim-proof` which generates the SIM Proof for
+the comparison function with respect to `ℕ-compare`, and
+`𝔽-compare-sim-proof` which just does it with respect to `𝔽-compare`.
 
 ### Comparing single bits
 
 We know that we want to compare single bits but, at this point, it is
-not clear what would be the best type represent `R` with. In fact,
+not clear what would be the best type to represent `R` with. In fact,
 this question may not have a definitive answer. Accordingly we set `τ
 = 𝔹` and `μ = 𝔹-to-𝔽2`, but we leave `ρ` and `ν` abstract.
 
-We will define a function called `mk-𝔹-Comparison` which, given a `ν`
-will produce a value of type `Comparison 𝔹-to-𝔽2 ν`. As it turns out,
-in order to prove the requisite properties we will require more than
-just `ν` to be provided. We also require `ν⁻¹` and a proof of right
-invertibility i.e. `ν ∘ ν⁻¹ ≗ id`.
+We are on our way to defining a function called `mk-𝔹-Comparison`
+which, given a `ν` will produce a value of type `Comparison 𝔹-to-𝔽2
+ν`. As it turns out, in order to prove the requisite properties we
+will require more than just `ν` to be provided. We also require `ν⁻¹`
+and a proof of right invertibility i.e. `ν ∘ ν⁻¹ ≗ id`.
 
 A convenient way to do this is to package up these three things into a Agda record type.
 
@@ -781,23 +790,55 @@ record R-Rep (ρ : Set) : Set where
     -- however this means it's not left invertible. i.e.  it is not true that ν⁻¹ ∘ ν ≗ id
 ```
 
+By consulting the definition of `𝔽-compare` above we can partially
+refine it. Because we are refining from `𝔽-compare` specialised to
+type `𝔽 2` the recursive case of the definition with pattern
+`𝔽-compare (suc m) (suc n)` can only match `suc zero` which is
+represented by the value `𝕥`. The right-hand side of that case "strips
+the `suc`s off" yielding `𝔹-compare-ρ rr (𝕗 , 𝕗)`.
+
+```
+𝔹-compare-ρ₀ : {ρ : Set} → (nu : R-Rep ρ) → 𝔹² → ρ
+𝔹-compare-ρ₀ rr (𝕗 , 𝕗) = (R-Rep.ν⁻¹ rr) is=
+𝔹-compare-ρ₀ rr (𝕗 , 𝕥) = (R-Rep.ν⁻¹ rr) is<
+𝔹-compare-ρ₀ rr (𝕥 , 𝕗) = (R-Rep.ν⁻¹ rr) is>
+𝔹-compare-ρ₀ rr (𝕥 , 𝕥) = 𝔹-compare-ρ₀ rr (𝕗 , 𝕗)
+```
+
+But we can further simplify this via equational reasoning to:
+
 ```
 𝔹-compare-ρ : {ρ : Set} → (nu : R-Rep ρ) → 𝔹² → ρ
 𝔹-compare-ρ rr (𝕗 , 𝕗) = (R-Rep.ν⁻¹ rr) is=
 𝔹-compare-ρ rr (𝕗 , 𝕥) = (R-Rep.ν⁻¹ rr) is<
 𝔹-compare-ρ rr (𝕥 , 𝕗) = (R-Rep.ν⁻¹ rr) is>
 𝔹-compare-ρ rr (𝕥 , 𝕥) = (R-Rep.ν⁻¹ rr) is=
+```
 
+Next we define a function that specialise `is-compare` to `τ = 𝔹`.
+
+
+```
 is-𝔹-compare : {ρ : Set} → (rr : R-Rep ρ) → Set
 is-𝔹-compare rr = is-compare 𝔹-to-𝔽2 (R-Rep.ν rr) (𝔹-compare-ρ rr)
+```
 
+We can now create two `R-Rep` values for the case where `R` is
+represented by `𝔹²` and ‵𝔹³` respectively. The proofs of right
+invertibility are straightforward and done by exhaustion.
 
+```
 𝔹²-rr : R-Rep 𝔹²
 𝔹²-rr = record { ν = 𝔹²-to-R ; ν⁻¹ = R-to-𝔹² ; right-invertible = λ { is< → refl ; is= → refl ; is> → refl } }
 
 𝔹³-rr : R-Rep 𝔹³
 𝔹³-rr = record { ν = 𝔹³-to-R ; ν⁻¹ = R-to-𝔹³ ; right-invertible = λ { is< → refl ; is= → refl ; is> → refl } }
+```
 
+Given a value `rr : R-Rep ρ` we can prove `is-𝔹-compare rr` using the following
+reasoning:
+
+```
 rr-to-is-𝔹-compare : {ρ : Set} → (rr : R-Rep ρ) → is-𝔹-compare rr
 rr-to-is-𝔹-compare rr =
     λ { f,f@(𝕗 , 𝕗) → p {f,f} {is=} refl refl
@@ -826,14 +867,18 @@ rr-to-is-𝔹-compare rr =
       ∎
 ```
 
-We can now plug different `R-Rep` values to create comparison functions with `ρ = 𝔹²`
-and `ρ = 𝔹³` respectively.
-
+We can now complete the definition of `mk-𝔹-Comparison`.
 
 ```
 mk-𝔹-Comparison : {ρ : Set} → (rr : R-Rep ρ) → Comparison 𝔹-to-𝔽2 (R-Rep.ν rr)
 mk-𝔹-Comparison {ρ} rr = 𝔹-compare-ρ rr ⊣ (rr-to-is-𝔹-compare rr)
+```
 
+We can now plug in the two `R-Rep` values we defined above to generate
+comparison functions _along with their proofs_.
+
+
+```
 𝔹-Comparison-𝔹² : Comparison 𝔹-to-𝔽2 𝔹²-to-R
 𝔹-Comparison-𝔹² = mk-𝔹-Comparison 𝔹²-rr
 
