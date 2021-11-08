@@ -382,17 +382,17 @@ F𝟚-to-𝔹 (suc zero) = 𝕥
 
 Our commutative tower now looks like this
 
-        ℕ² --- ℕ-compare ----> R
-        ^                      ^
-        |                      |
-       toℕ²                    id
-        |                      |
-       𝔽 2,2 --- 𝔽-compare --> R
-        ^                      ^
-        |                      |
-   𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2        𝔹²-to-R
-        |                      |
-        𝔹² --- 𝔹-compare-𝔹² ----> 𝔹²
+        ℕ² --- ℕ-compare -----> R
+        ^                       ^
+        |                       |
+       toℕ²                     id
+        |                       |
+       𝔽 2,2 --- 𝔽-compare ---> R
+        ^                       ^
+        |                       |
+   𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2         𝔹²-to-R
+        |                       |
+        𝔹² --- 𝔹-compare-𝔹² --> 𝔹²
 
 
 Now all that remains is to define `𝔹-compare-𝔹²`.
@@ -414,9 +414,6 @@ machine-checked, facts to yield a preliminary definition for
 𝔹-compare-𝔹²₀ (𝕥 , 𝕗) = R-to-𝔹² is>
 𝔹-compare-𝔹²₀ (𝕥 , 𝕥) = 𝔹-compare-𝔹²₀ (𝕗 , 𝕗)
 ```
-
-[Conal, I'm disatisfied with this because it feels like I did my equational reasoning "outside"
- of Agda. Is there are a way to do equational reasoning involving pattern matching inside Agda?]
 
 Simplifying, this yields
 
