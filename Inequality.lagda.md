@@ -307,209 +307,6 @@ We package this up as a SIM Proof as follows:
 𝔽-compare⇉  = arr 𝔽-compare ℕ-compare toℕ²-ℕ-compare
 ```
 
-## A one-bit comparison function
-
-Before going on we'll perform another refinement down to a single
-digit binary comparison function.
-[TODO: explain central techniques like the commutative tower]
-
-However, if we are going to generate a circuit from this we
-will have to use boolean values to represent values of both type `R`
-and `𝔽 2`.
-
-For values of type `R` we produce a pair where the first component
-represents whether the value is `is<` and the second whether the value
-is `is=`.
-
-```
-R-to-𝔹² : R → 𝔹²
-R-to-𝔹² is< = (𝕥 , 𝕗)
-R-to-𝔹² is= = (𝕗 , 𝕥)
-R-to-𝔹² is> = (𝕗 , 𝕗)
-```
-
-
-
-
-There are 4 values that can be represented by a pair of booleans, so
-one will necessarily not appear on the right hand side of this
-definition. Using the representation we have chosen it is cleary `(𝕥 ,
-𝕥)`. Fortunately, this value would be meaningless since two numbers
-cannot both be less-than and equal to each other. Nevertheless, the
-redundancy of the `B²` type in representing `R` values does not sit
-well with me, and seems inelegant. The non-redundant representation of
-sum types like `R` is still an open problem in want of a solution.
-
-We want `R-to-𝔹²` to be invertible but this leads us to the question
-of what we should do with the input `(𝕥 , 𝕥)`. One choice is that it
-represents `is<` if we slightly modify the meaning of the pair of
-booleans to mean that the second component only has a meaning if the
-first component is `𝕗`. This leads to this definition:
-
-
-```
-𝔹²-to-R :  𝔹² → R
-𝔹²-to-R (𝕥 , _) = is<
-𝔹²-to-R (𝕗 , 𝕥) = is=
-𝔹²-to-R (𝕗 , 𝕗) = is>
-```
-
-Unfortunately this means that the function is not invertible in one direction, since the
-following is true.
-
-    (R-to-𝔹² ∘ 𝔹²-to-R) (𝕥 , 𝕥) = (𝕥 , 𝕗)
-
-Thus we cannot prove that `R-to-𝔹² ∘ 𝔹²-to-R ≗ id` but we can prove
-`𝔹²-to-R ∘ R-to-𝔹² ≗ id`.
-
-
-
-Next we define a pair of functions `F𝟚-to-𝔹` and `𝔹-to­𝔽2` for
-converting between finite sets of cardinality two and booleans and
-vice versa.
-
-```
-F𝟚-to-𝔹 : 𝔽 2 → 𝔹
-F𝟚-to-𝔹 zero       = 𝕗
-F𝟚-to-𝔹 (suc zero) = 𝕥
-
-𝔹-to-𝔽2 : 𝔹 → 𝔽 2
-𝔹-to-𝔽2 𝕗 = zero
-𝔹-to-𝔽2 𝕥 = suc zero
-```
-
-
-
-Our commutative tower now looks like this
-
-        ℕ² --- ℕ-compare -----> R
-        ^                       ^
-        |                       |
-       toℕ²                     id
-        |                       |
-       𝔽 2,2 --- 𝔽-compare ---> R
-        ^                       ^
-        |                       |
-   𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2         𝔹²-to-R
-        |                       |
-        𝔹² --- 𝔹-compare-𝔹² --> 𝔹²
-
-
-Now all that remains is to define `𝔹-compare-𝔹²`.
-
-We do a simple case analysis on `𝔽-compare` along with the following,
-machine-checked, facts to yield a preliminary definition for
-`𝔹-compare-𝔹²`.
-
-```
-𝕗-is-zero : 𝔹-to-𝔽2 𝕗 ≡ zero
-𝕗-is-zero = refl
-
-𝕥-is-one : 𝔹-to-𝔽2 𝕥 ≡ suc zero
-𝕥-is-one = refl
-
-𝔹-compare-𝔹²₀ : 𝔹² → 𝔹²
-𝔹-compare-𝔹²₀ (𝕗 , 𝕗) = R-to-𝔹² is=
-𝔹-compare-𝔹²₀ (𝕗 , 𝕥) = R-to-𝔹² is<
-𝔹-compare-𝔹²₀ (𝕥 , 𝕗) = R-to-𝔹² is>
-𝔹-compare-𝔹²₀ (𝕥 , 𝕥) = 𝔹-compare-𝔹²₀ (𝕗 , 𝕗)
-```
-
-Simplifying, this yields
-
-```
-𝔹-compare-𝔹²₁ : 𝔹² → 𝔹²
-𝔹-compare-𝔹²₁ (𝕗 , 𝕗) = (𝕗 , 𝕥)
-𝔹-compare-𝔹²₁ (𝕗 , 𝕥) = (𝕥 , 𝕗)
-𝔹-compare-𝔹²₁ (𝕥 , 𝕗) = (𝕗 , 𝕗)
-𝔹-compare-𝔹²₁ (𝕥 , 𝕥) = (𝕗 , 𝕥)
-```
-
-This can be simplified to use the "fork" operator `▵`.
-
-```
-𝔹-compare-𝔹²₂ : 𝔹² → 𝔹²
-𝔹-compare-𝔹²₂ = comp-fst ▵ comp-snd
-  where
-    comp-fst : 𝔹² → 𝔹
-    comp-fst (𝕗 , 𝕗) = 𝕗
-    comp-fst (𝕗 , 𝕥) = 𝕥
-    comp-fst (𝕥 , 𝕗) = 𝕗
-    comp-fst (𝕥 , 𝕥) = 𝕗
-
-    comp-snd : 𝔹² → 𝔹
-    comp-snd (𝕗 , 𝕗) = 𝕥
-    comp-snd (𝕗 , 𝕥) = 𝕗
-    comp-snd (𝕥 , 𝕗) = 𝕗
-    comp-snd (𝕥 , 𝕥) = 𝕥
-```
-
-We now use our knowledge of boolean function primitives and the "truth table" evident
-in the definition above to yield:
-
-[TODO: make this more explicit]
-
-```
-𝔹-compare-𝔹² : 𝔹² → 𝔹²
-𝔹-compare-𝔹² = (∧ ∘ first not) ▵ (not ∘ xor)
-```
-
-## 3-bit representation of `R`
-
-It seems common in traditional hardware design to use a "one-hot"
-3-bit representation of the `R` type. That is, three wires only one of
-which can be true, the rest being false.
-
-```
-𝔹³ : Set
-𝔹³ = 𝔹 × 𝔹 × 𝔹
-```
-
-Defining `R-to-𝔹³` is straightforward.
-
-```
-R-to-𝔹³ : R → 𝔹³
-R-to-𝔹³ is< = (𝕥 , 𝕗 , 𝕗)
-R-to-𝔹³ is= = (𝕗 , 𝕥 , 𝕗)
-R-to-𝔹³ is> = (𝕗 , 𝕗 , 𝕥)
-```
-
-However, the inverse function is even trickier to define than
-`𝔹²-to-R`. We want a total function but there is a even more
-redundancy in the representation then for the 2-bit case since 3 bits
-can represent 8 different values. We must have cases for when there is
-more than "one hot wire" and we must also consider the case where none
-of them are "hot".
-
-We choose `is<` as our "no hot" case and use a priority-based encoding
-for the other cases.  Each of the positions in the triple denote
-`is<`, `is=` and `is>` respectively, but this is also the order of
-priority.
-
-If a `𝕥` appears in the `is<` position then it overrides whatever is
-in the other two positions.  The `is=` is similar. It has priority
-over the `is>` value but only when a `𝕗` appears in the `is<`
-position. This leads us to the following definition:
-
-
-```
-
-𝔹³-to-R : 𝔹³ → R
-𝔹³-to-R (𝕗 , 𝕗 , 𝕗) = is<
-𝔹³-to-R (𝕥 , _ , _) = is<
-𝔹³-to-R (𝕗 , 𝕥 , _) = is=
-𝔹³-to-R (𝕗 , 𝕗 , 𝕥) = is>
-```
-
-We are now in a position to define `𝔹-compare-𝔹³`.
-
-[TODO: Consider not defining this at all at this point and wait
-for the later approach]
-
-```
-𝔹-compare-𝔹³ : 𝔹² → 𝔹³
-𝔹-compare-𝔹³ = (∧ ∘ first not) ▵ (not ∘ xor) ▵ (∧ ∘ second not)
-```
 
 ## Why the multi-digit comparison with carry approach is undesirable
 
@@ -762,7 +559,32 @@ Note the definition of `sim-proof` which generates the SIM Proof for
 the comparison function with respect to `ℕ-compare`, and
 `𝔽-compare-sim-proof` which just does it with respect to `𝔽-compare`.
 
-### Comparing single bits
+## Bits represent Finite Sets of cardinality 2
+
+A finite set of cardinality 2 (`𝔽 2`) can be represented by a single
+bit. Accordingly we define two functions to convert to and from bits.
+
+```
+F𝟚-to-𝔹 : 𝔽 2 → 𝔹
+F𝟚-to-𝔹 zero       = 𝕗
+F𝟚-to-𝔹 (suc zero) = 𝕥
+
+𝔹-to-𝔽2 : 𝔹 → 𝔽 2
+𝔹-to-𝔽2 𝕗 = zero
+𝔹-to-𝔽2 𝕥 = suc zero
+```
+
+We also prove that they are inverses of each other
+
+```
+F𝟚-to-𝔹∘𝔹-to-𝔽2≗ : F𝟚-to-𝔹 ∘ 𝔹-to-𝔽2 ≗ id
+F𝟚-to-𝔹∘𝔹-to-𝔽2≗ = λ { 𝕥 → refl; 𝕗 → refl }
+
+𝔹-to-𝔽2∘F𝟚-to-𝔹≗id : 𝔹-to-𝔽2 ∘ F𝟚-to-𝔹 ≗ id
+𝔹-to-𝔽2∘F𝟚-to-𝔹≗id = λ { zero → refl; (suc zero) → refl }
+```
+
+### Comparing bits but leaving the representation of `R` abstract
 
 We know that we want to compare single bits but, at this point, it is
 not clear what would be the best type to represent `R` with. In fact,
@@ -819,6 +641,113 @@ Next we define a function that specialise `is-compare` to `τ = 𝔹`.
 is-𝔹-compare : {ρ : Set} → (rr : R-Rep ρ) → Set
 is-𝔹-compare rr = is-compare 𝔹-to-𝔽2 (R-Rep.ν rr) (𝔹-compare-ρ rr)
 ```
+
+## Two representations of `R`
+
+Most modern hardware restricts itself to representing values only
+using bits. One can represent any type with `2ⁿ` values via a
+collection of bits but, conversely, if you are trying to represent a
+type that doesn't have exactly this many values then there will be
+some redundancy in the encoding. Whether there is a better way to
+encode values in hardware, perhaps using different bases, or more
+complicated circuitry is an open question that I would like to explore
+further in future. However, for the purposes of this note I will use
+the standard techniques modern hardware uses.
+
+### A two-bit encoding of `R`
+
+The encoding for `R` with the _least redundancy_ is a pair of bits
+(`𝔹²`). This type has 4 values while `R` has only 3 so their will be
+one redundant value. There are many ways to encode `R` using `𝔹²` but
+we choose and encoding where each element of the pair means
+something. The first element represents whether the value is `is<` and
+the second whether the value is `is=`. This gives us:
+
+```
+R-to-𝔹² : R → 𝔹²
+R-to-𝔹² is< = (𝕥 , 𝕗)
+R-to-𝔹² is= = (𝕗 , 𝕥)
+R-to-𝔹² is> = (𝕗 , 𝕗)
+```
+
+The missing value of `𝔹²` on the right hand side is `(𝕥 ,
+𝕥)`. Fortunately, this value would be meaningless since two numbers
+cannot both be less-than and equal to each other. Nevertheless, the
+redundancy of the `𝔹²` type in representing `R` values does not sit
+well with me, and seems inelegant. The non-redundant representation of
+sum types like `R` is still an open problem in want of a solution.
+
+We want `R-to-𝔹²` to be invertible but this leads us to the question
+of what we should do with the input `(𝕥 , 𝕥)`. One choice is that it
+represents `is<` if we slightly modify the meaning of the pair of
+booleans to mean that the second component only has a meaning if the
+first component is `𝕗`. This leads to this definition:
+
+
+```
+𝔹²-to-R :  𝔹² → R
+𝔹²-to-R (𝕥 , _) = is<
+𝔹²-to-R (𝕗 , 𝕥) = is=
+𝔹²-to-R (𝕗 , 𝕗) = is>
+```
+
+Unfortunately this means that the function is not invertible in one direction, since the
+following is true.
+
+    (R-to-𝔹² ∘ 𝔹²-to-R) (𝕥 , 𝕥) = (𝕥 , 𝕗)
+
+Thus we cannot prove that `R-to-𝔹² ∘ 𝔹²-to-R ≗ id` but we can prove
+`𝔹²-to-R ∘ R-to-𝔹² ≗ id`.
+
+### The "one-hot" three-bit-encoding of `R`
+
+## 3-bit representation of `R`
+
+It seems common in traditional hardware design to use a "one-hot"
+3-bit representation of the `R` type. That is, three wires only one of
+which can be true, the rest being false.
+
+```
+𝔹³ : Set
+𝔹³ = 𝔹 × 𝔹 × 𝔹
+```
+
+Defining `R-to-𝔹³` is straightforward.
+
+```
+R-to-𝔹³ : R → 𝔹³
+R-to-𝔹³ is< = (𝕥 , 𝕗 , 𝕗)
+R-to-𝔹³ is= = (𝕗 , 𝕥 , 𝕗)
+R-to-𝔹³ is> = (𝕗 , 𝕗 , 𝕥)
+```
+
+However, the inverse function is even trickier to define than
+`𝔹²-to-R`. We want a total function but there is a even more
+redundancy in the representation then for the 2-bit case since 3 bits
+can represent 8 different values. We must have cases for when there is
+more than "one hot wire" and we must also consider the case where none
+of them are "hot".
+
+We choose `is<` as our "no hot" case and use a priority-based encoding
+for the other cases.  Each of the positions in the triple denote
+`is<`, `is=` and `is>` respectively, but this is also the order of
+priority.
+
+If a `𝕥` appears in the `is<` position then it overrides whatever is
+in the other two positions.  The `is=` is similar. It has priority
+over the `is>` value but only when a `𝕗` appears in the `is<`
+position. This leads us to the following definition:
+
+
+```
+𝔹³-to-R : 𝔹³ → R
+𝔹³-to-R (𝕗 , 𝕗 , 𝕗) = is<
+𝔹³-to-R (𝕥 , _ , _) = is<
+𝔹³-to-R (𝕗 , 𝕥 , _) = is=
+𝔹³-to-R (𝕗 , 𝕗 , 𝕥) = is>
+```
+
+## Two one-bit comparison functions with different representations for `R`
 
 We can now create two `R-Rep` values for the case where `R` is
 represented by `𝔹²` and ‵𝔹³` respectively. The proofs of right
@@ -967,24 +896,25 @@ opᴮ³-is-monoid-op = λ { ((𝕥 , _ , _) , _) → refl
                       }
 ```
 
+[TODO: Think about what to do here]
 
 
 ```
-𝔹²-compare : 𝔹² × 𝔹² → 𝔹²
-𝔹²-compare = 𝔹-compare-𝔹² ●̂ 𝔹-compare-𝔹²
-  where
-    _●̂_ : ∀ {τₘ τₙ} → D 𝔹² τₘ → D 𝔹² τₙ  → D 𝔹² (τₘ × τₙ)
-    _●̂_ = mk-●̂ opᴮ
+-- 𝔹²-compare : 𝔹² × 𝔹² → 𝔹²
+-- 𝔹²-compare = 𝔹-compare-𝔹² ●̂ 𝔹-compare-𝔹²
+--   where
+--    _●̂_ : ∀ {τₘ τₙ} → D 𝔹² τₘ → D 𝔹² τₙ  → D 𝔹² (τₘ × τₙ)
+--    _●̂_ = mk-●̂ opᴮ
 ```
 
 And now a 4-bit comparison.
 
 ```
-𝔹⁴-compare : (𝔹² × 𝔹²) × (𝔹² × 𝔹²) → 𝔹²
-𝔹⁴-compare = (𝔹-compare-𝔹² ●̂ 𝔹-compare-𝔹²) ●̂ (𝔹-compare-𝔹² ●̂ 𝔹-compare-𝔹²)
-  where
-    _●̂_ : ∀ {τₘ τₙ} → D 𝔹² τₘ → D 𝔹² τₙ  → D 𝔹² (τₘ × τₙ)
-    _●̂_ = mk-●̂ opᴮ
+-- 𝔹⁴-compare : (𝔹² × 𝔹²) × (𝔹² × 𝔹²) → 𝔹²
+-- 𝔹⁴-compare = (𝔹-compare-𝔹² ●̂ 𝔹-compare-𝔹²) ●̂ (𝔹-compare-𝔹² ●̂ 𝔹-compare-𝔹²)
+--  where
+--    _●̂_ : ∀ {τₘ τₙ} → D 𝔹² τₘ → D 𝔹² τₙ  → D 𝔹² (τₘ × τₙ)
+--    _●̂_ = mk-●̂ opᴮ
 
 ```
 
@@ -1023,8 +953,8 @@ opᴮ̂ = cond ∘ ((exl ∘ exl) ▵ else ▵ exl)
     _■̂_ : ∀ {τₘ τₙ} → D̂ 𝔹̂² τₘ → D̂ 𝔹̂² τₙ  → D̂ 𝔹̂² (τₘ × τₙ)
     _■̂_ = mk-■̂ opᴮ̂
 
-Fₘ-𝔹⁴-compareᶜC : Fₘ 𝔹⁴-compareC ≡ 𝔹⁴-compare
-Fₘ-𝔹⁴-compareᶜC  = refl
+-- Fₘ-𝔹⁴-compareᶜC : Fₘ 𝔹⁴-compareC ≡ 𝔹⁴-compare
+-- Fₘ-𝔹⁴-compareᶜC  = refl
 ```
 
 ```
@@ -1116,3 +1046,224 @@ R-to-Σ𝔹∘Σ𝔹³-to-R ( (𝕗 , 𝕗 , 𝕥) , refl) = refl
 
 However, I don't yet know how to make this work with Conal's work on
 Compiling to Categories. This is an open problem at this point.
+
+
+
+----------
+
+
+## A one-bit comparison function
+
+Before going on we'll perform another refinement down to a single
+digit binary comparison function.
+[TODO: explain central techniques like the commutative tower]
+
+However, if we are going to generate a circuit from this we
+will have to use boolean values to represent values of both type `R`
+and `𝔽 2`.
+
+For values of type `R` we produce a pair where the first component
+represents whether the value is `is<` and the second whether the value
+is `is=`.
+
+```
+{-
+R-to-𝔹² : R → 𝔹²
+R-to-𝔹² is< = (𝕥 , 𝕗)
+R-to-𝔹² is= = (𝕗 , 𝕥)
+R-to-𝔹² is> = (𝕗 , 𝕗)
+-}
+```
+
+
+
+
+There are 4 values that can be represented by a pair of booleans, so
+one will necessarily not appear on the right hand side of this
+definition. Using the representation we have chosen it is cleary `(𝕥 ,
+𝕥)`. Fortunately, this value would be meaningless since two numbers
+cannot both be less-than and equal to each other. Nevertheless, the
+redundancy of the `B²` type in representing `R` values does not sit
+well with me, and seems inelegant. The non-redundant representation of
+sum types like `R` is still an open problem in want of a solution.
+
+We want `R-to-𝔹²` to be invertible but this leads us to the question
+of what we should do with the input `(𝕥 , 𝕥)`. One choice is that it
+represents `is<` if we slightly modify the meaning of the pair of
+booleans to mean that the second component only has a meaning if the
+first component is `𝕗`. This leads to this definition:
+
+
+```
+{-
+𝔹²-to-R :  𝔹² → R
+𝔹²-to-R (𝕥 , _) = is<
+𝔹²-to-R (𝕗 , 𝕥) = is=
+𝔹²-to-R (𝕗 , 𝕗) = is>
+-}
+```
+
+Unfortunately this means that the function is not invertible in one direction, since the
+following is true.
+
+    (R-to-𝔹² ∘ 𝔹²-to-R) (𝕥 , 𝕥) = (𝕥 , 𝕗)
+
+Thus we cannot prove that `R-to-𝔹² ∘ 𝔹²-to-R ≗ id` but we can prove
+`𝔹²-to-R ∘ R-to-𝔹² ≗ id`.
+
+
+
+Next we define a pair of functions `F𝟚-to-𝔹` and `𝔹-to­𝔽2` for
+converting between finite sets of cardinality two and booleans and
+vice versa.
+
+```
+{-F𝟚-to-𝔹 : 𝔽 2 → 𝔹
+F𝟚-to-𝔹 zero       = 𝕗
+F𝟚-to-𝔹 (suc zero) = 𝕥
+
+𝔹-to-𝔽2 : 𝔹 → 𝔽 2
+𝔹-to-𝔽2 𝕗 = zero
+𝔹-to-𝔽2 𝕥 = suc zero
+-}
+```
+
+
+
+Our commutative tower now looks like this
+
+        ℕ² --- ℕ-compare -----> R
+        ^                       ^
+        |                       |
+       toℕ²                     id
+        |                       |
+       𝔽 2,2 --- 𝔽-compare ---> R
+        ^                       ^
+        |                       |
+   𝔹-to-𝔽2 ⊗ 𝔹-to-𝔽2         𝔹²-to-R
+        |                       |
+        𝔹² --- 𝔹-compare-𝔹² --> 𝔹²
+
+
+Now all that remains is to define `𝔹-compare-𝔹²`.
+
+We do a simple case analysis on `𝔽-compare` along with the following,
+machine-checked, facts to yield a preliminary definition for
+`𝔹-compare-𝔹²`.
+
+```
+𝕗-is-zero : 𝔹-to-𝔽2 𝕗 ≡ zero
+𝕗-is-zero = refl
+
+𝕥-is-one : 𝔹-to-𝔽2 𝕥 ≡ suc zero
+𝕥-is-one = refl
+
+𝔹-compare-𝔹²₀ : 𝔹² → 𝔹²
+𝔹-compare-𝔹²₀ (𝕗 , 𝕗) = R-to-𝔹² is=
+𝔹-compare-𝔹²₀ (𝕗 , 𝕥) = R-to-𝔹² is<
+𝔹-compare-𝔹²₀ (𝕥 , 𝕗) = R-to-𝔹² is>
+𝔹-compare-𝔹²₀ (𝕥 , 𝕥) = 𝔹-compare-𝔹²₀ (𝕗 , 𝕗)
+```
+
+Simplifying, this yields
+
+```
+𝔹-compare-𝔹²₁ : 𝔹² → 𝔹²
+𝔹-compare-𝔹²₁ (𝕗 , 𝕗) = (𝕗 , 𝕥)
+𝔹-compare-𝔹²₁ (𝕗 , 𝕥) = (𝕥 , 𝕗)
+𝔹-compare-𝔹²₁ (𝕥 , 𝕗) = (𝕗 , 𝕗)
+𝔹-compare-𝔹²₁ (𝕥 , 𝕥) = (𝕗 , 𝕥)
+```
+
+This can be simplified to use the "fork" operator `▵`.
+
+```
+𝔹-compare-𝔹²₂ : 𝔹² → 𝔹²
+𝔹-compare-𝔹²₂ = comp-fst ▵ comp-snd
+  where
+    comp-fst : 𝔹² → 𝔹
+    comp-fst (𝕗 , 𝕗) = 𝕗
+    comp-fst (𝕗 , 𝕥) = 𝕥
+    comp-fst (𝕥 , 𝕗) = 𝕗
+    comp-fst (𝕥 , 𝕥) = 𝕗
+
+    comp-snd : 𝔹² → 𝔹
+    comp-snd (𝕗 , 𝕗) = 𝕥
+    comp-snd (𝕗 , 𝕥) = 𝕗
+    comp-snd (𝕥 , 𝕗) = 𝕗
+    comp-snd (𝕥 , 𝕥) = 𝕥
+```
+
+We now use our knowledge of boolean function primitives and the "truth table" evident
+in the definition above to yield:
+
+[TODO: make this more explicit]
+
+```
+𝔹-compare-𝔹² : 𝔹² → 𝔹²
+𝔹-compare-𝔹² = (∧ ∘ first not) ▵ (not ∘ xor)
+```
+
+## 3-bit representation of `R`
+
+It seems common in traditional hardware design to use a "one-hot"
+3-bit representation of the `R` type. That is, three wires only one of
+which can be true, the rest being false.
+
+```
+{-
+𝔹³ : Set
+𝔹³ = 𝔹 × 𝔹 × 𝔹
+-}
+```
+
+Defining `R-to-𝔹³` is straightforward.
+
+```
+{-
+R-to-𝔹³ : R → 𝔹³
+R-to-𝔹³ is< = (𝕥 , 𝕗 , 𝕗)
+R-to-𝔹³ is= = (𝕗 , 𝕥 , 𝕗)
+R-to-𝔹³ is> = (𝕗 , 𝕗 , 𝕥)
+-}
+```
+
+However, the inverse function is even trickier to define than
+`𝔹²-to-R`. We want a total function but there is a even more
+redundancy in the representation then for the 2-bit case since 3 bits
+can represent 8 different values. We must have cases for when there is
+more than "one hot wire" and we must also consider the case where none
+of them are "hot".
+
+We choose `is<` as our "no hot" case and use a priority-based encoding
+for the other cases.  Each of the positions in the triple denote
+`is<`, `is=` and `is>` respectively, but this is also the order of
+priority.
+
+If a `𝕥` appears in the `is<` position then it overrides whatever is
+in the other two positions.  The `is=` is similar. It has priority
+over the `is>` value but only when a `𝕗` appears in the `is<`
+position. This leads us to the following definition:
+
+
+```
+{-
+𝔹³-to-R : 𝔹³ → R
+𝔹³-to-R (𝕗 , 𝕗 , 𝕗) = is<
+𝔹³-to-R (𝕥 , _ , _) = is<
+𝔹³-to-R (𝕗 , 𝕥 , _) = is=
+𝔹³-to-R (𝕗 , 𝕗 , 𝕥) = is>
+-}
+```
+
+We are now in a position to define `𝔹-compare-𝔹³`.
+
+[TODO: Consider not defining this at all at this point and wait
+for the later approach]
+
+```
+{-
+𝔹-compare-𝔹³ : 𝔹² → 𝔹³
+𝔹-compare-𝔹³ = (∧ ∘ first not) ▵ (not ∘ xor) ▵ (∧ ∘ second not)
+-}
+```
