@@ -25,6 +25,8 @@ open import Relation.Nullary.Decidable
 ```
 -->
 
+# Deriving comparison circuits via Denotational Design
+
 In this document we derive efficient comparison circuits. The original
 goal was to derive an efficient implementation of the
 less-than-or-equal-to comparison circuit, but it became quickly
@@ -438,13 +440,13 @@ for the final result. Another source of inspiration would be to
 consider lexicographic ordering of strings.
 
 This leads to the following definition of the operator, which we have
-called `▲`.
+called `⟨▲⟩`.
 
 ```
-▲ : R × R → R
-▲ (is= , r₂) = r₂
-▲ (is< , _)  = is<
-▲ (is> , _)  = is>
+⟨▲⟩ : R × R → R
+⟨▲⟩ (is= , r₂) = r₂
+⟨▲⟩ (is< , _)  = is<
+⟨▲⟩ (is> , _)  = is>
 ```
 
 By considering every pair of possible inputs (for a total of 9 cases)
@@ -453,44 +455,45 @@ one can convince oneself that this operator is associative and that
 assurance by proving this in Agda.
 
 To do this we use the Standard Library's `Algebra` modules. This
-requires we uncurry the `▲` operator as their definitions are only
+requires we uncurry the `⟨▲⟩` operator as their definitions are only
 defined in terms of uncurried functions.
 
 ```
-open import Algebra.Core
-open import Algebra.Structures {A = R} (_≡_)
-open import Algebra.Definitions {A = R} (_≡_)
+module _▲_-proofs where
+  open import Algebra.Core
+  open import Algebra.Structures {A = R} (_≡_)
+  open import Algebra.Definitions {A = R} (_≡_)
 
 
-_▲_ : Op₂ R
-_▲_ = curry ▲
+  _▲_ : Op₂ R
+  _▲_ = curry ⟨▲⟩
 ```
 
 ```
-▲-identityˡ : LeftIdentity is= _▲_
-▲-identityˡ _ = refl
+  ▲-identityˡ : LeftIdentity is= _▲_
+  ▲-identityˡ _ = refl
 
-▲-identityʳ : RightIdentity is= _▲_
-▲-identityʳ is= = refl
-▲-identityʳ is< = refl
-▲-identityʳ is> = refl
+  ▲-identityʳ : RightIdentity is= _▲_
+  ▲-identityʳ is= = refl
+  ▲-identityʳ is< = refl
+  ▲-identityʳ is> = refl
 
-▲-identity : Identity is= _▲_
-▲-identity =  ▲-identityˡ , ▲-identityʳ
+  ▲-identity : Identity is= _▲_
+  ▲-identity =  ▲-identityˡ , ▲-identityʳ
 
-▲-assoc : Associative _▲_
-▲-assoc is= _ _ = refl
-▲-assoc is< _ _ = refl
-▲-assoc is> _ _ = refl
+  ▲-assoc : Associative _▲_
+  ▲-assoc is= _ _ = refl
+  ▲-assoc is< _ _ = refl
+  ▲-assoc is> _ _ = refl
 
-▲-isMagma : IsMagma _▲_
-▲-isMagma = record { isEquivalence = isEquivalence; ∙-cong = cong₂ _▲_  }
+  ▲-isMagma : IsMagma _▲_
+  ▲-isMagma = record { isEquivalence = isEquivalence; ∙-cong = cong₂ _▲_  }
 
-▲-isSemigroup : IsSemigroup _▲_
-▲-isSemigroup = record { isMagma = ▲-isMagma; assoc = ▲-assoc }
+  ▲-isSemigroup : IsSemigroup _▲_
+  ▲-isSemigroup = record { isMagma = ▲-isMagma; assoc = ▲-assoc }
 
-▲-isMonoid : IsMonoid _▲_ is=
-▲-isMonoid = record { isSemigroup = ▲-isSemigroup; identity = ▲-identity }
+  ▲-isMonoid : IsMonoid _▲_ is=
+  ▲-isMonoid = record { isSemigroup = ▲-isSemigroup; identity = ▲-identity }
 ```
 
 The monoid we have just defined will come in handy but only once we
@@ -627,7 +630,7 @@ the `suc`s off" yielding `𝔹-compare-ρ rr (𝕗 , 𝕗)`.
 But we can further simplify this via equational reasoning to:
 
 ```
-𝔹-compare-ρ : {ρ : Set} → (nu : R-Rep ρ) → 𝔹² → ρ
+𝔹-compare-ρ : {ρ : Set} → R-Rep ρ → 𝔹² → ρ
 𝔹-compare-ρ rr (𝕗 , 𝕗) = (R-Rep.ν⁻¹ rr) is=
 𝔹-compare-ρ rr (𝕗 , 𝕥) = (R-Rep.ν⁻¹ rr) is<
 𝔹-compare-ρ rr (𝕥 , 𝕗) = (R-Rep.ν⁻¹ rr) is>
@@ -723,7 +726,7 @@ R-to-𝔹³ is> = (𝕗 , 𝕗 , 𝕥)
 
 However, the inverse function is even trickier to define than
 `𝔹²-to-R`. We want a total function but there is a even more
-redundancy in the representation then for the 2-bit case since 3 bits
+redundancy in the representation than for the 2-bit case since 3 bits
 can represent 8 different values. We must have cases for when there is
 more than "one hot wire" and we must also consider the case where none
 of them are "hot".
@@ -735,7 +738,7 @@ priority.
 
 If a `𝕥` appears in the `is<` position then it overrides whatever is
 in the other two positions.  The `is=` is similar. It has priority
-over the `is>` value but only when a `𝕗` appears in the `is<`
+over the `is>` value but only when an `𝕗` appears in the `is<`
 position. This leads us to the following definition:
 
 
@@ -812,91 +815,445 @@ comparison functions _along with their proofs_.
 𝔹-Comparison-𝔹³ = mk-𝔹-Comparison 𝔹³-rr
 ```
 
-## And now for the combinators
+## Switching to categorical representation of comparison functions
 
-        R × R ----- ▲ ------> R
+While the principles of "compiling to categories" (TODO: Add
+reference!) are now well-understood, the implementation of a function
+that can automatically do this is not quite finished at the time I'm
+writing this.
+
+Thus, for the rest of this note I will use explicitly define functions
+using a categorical representation and, where necessary, "compile by
+hand" the definitions we have already come up with to this
+representation.
+
+### Some necessary abbreviations
+
+```
+open import Ty
+open import Categorical.Free.Homomorphism Function
+
+open import Categorical.Homomorphism
+  renaming ( refl to ≈refl; trans to ≈trans; sym to ≈sym
+           ; Bool to 𝔹̂; ∧ to ⟨∧⟩; ∨ to ⟨∨⟩; xor to ⟨⊕⟩
+           )
+𝔹̂² : Ty
+𝔹̂² = 𝔹̂ × 𝔹̂
+
+𝔹̂³ : Ty
+𝔹̂³ = 𝔹̂ × 𝔹̂ × 𝔹̂
+```
+
+## Hand-compiling down to categorical representation for `𝔹-compare-𝔹²`
+
+We have already defined the comparison function which uses `𝔹²` as its
+representation type for `R`. It is the `compare` field of record value
+`𝔹-Comparison-𝔹²`.
+
+We'll start the hand-compilation process by writing down an equivalent
+function `𝔹-compare-𝔹²₀`. We do this by consulting the definition of
+`𝔹-compare-ρ` and `R-to-𝔹²`. We get:
+
+```
+𝔹-compare-𝔹²₀ : 𝔹² → 𝔹²
+𝔹-compare-𝔹²₀ (𝕗 , 𝕗) = (𝕗 , 𝕥)
+𝔹-compare-𝔹²₀ (𝕗 , 𝕥) = (𝕥 , 𝕗)
+𝔹-compare-𝔹²₀ (𝕥 , 𝕗) = (𝕗 , 𝕗)
+𝔹-compare-𝔹²₀ (𝕥 , 𝕥) = (𝕗 , 𝕥)
+```
+
+Next, we separate `𝔹-compare-𝔹²₀` into two functions and use the `▵`
+operator to combine the results again.
+
+```
+𝔹-compare-𝔹²₁ : 𝔹² → 𝔹²
+𝔹-compare-𝔹²₁ = comp-fst ▵ comp-snd
+  where
+    comp-fst : 𝔹² → 𝔹
+    comp-fst (𝕗 , 𝕗) = 𝕗
+    comp-fst (𝕗 , 𝕥) = 𝕥
+    comp-fst (𝕥 , 𝕗) = 𝕗
+    comp-fst (𝕥 , 𝕥) = 𝕗
+
+    comp-snd : 𝔹² → 𝔹
+    comp-snd (𝕗 , 𝕗) = 𝕥
+    comp-snd (𝕗 , 𝕥) = 𝕗
+    comp-snd (𝕥 , 𝕗) = 𝕗
+    comp-snd (𝕥 , 𝕥) = 𝕥
+```
+
+The next part of the hand-compilation process relies on familiarity
+with the standard binary boolean functions and their truth tables. The
+RHS of `comp-fst` is only true in one case which is very similar to
+the `⟨∧⟩` function. By applying `not` to the first component of the
+input pair before applying `⟨∧⟩` we get a function definitonally
+equivalent to `comp-fst`.
+
+In the second case the output looks just like `not ∘ ⟨⊕⟩`.
+
+I will define the function using `𝔹̂` and the categorical arrow `_⇨_`
+since it now contains categorical primitives only.
+
+
+```
+𝔹̂-compare-𝔹̂² : 𝔹̂² ⇨ 𝔹̂²
+𝔹̂-compare-𝔹̂² = (⟨∧⟩ ∘ first not) ▵ (not ∘ ⟨⊕⟩)
+```
+
+Just to be sure we check that its image under `Fₘ` is the same as the
+original comparison function we defined. In this particular case, `Fₘ`
+maps from the category of syntax to the category of functions.
+
+```
+𝔹̂-compare-𝔹̂²≗𝔹-compare-𝔹² : Fₘ 𝔹̂-compare-𝔹̂² ≗ Comparison.compare 𝔹-Comparison-𝔹²
+𝔹̂-compare-𝔹̂²≗𝔹-compare-𝔹² =
+  λ { (𝕗 , 𝕗) → refl
+    ; (𝕗 , 𝕥) → refl
+    ; (𝕥 , 𝕗) → refl
+    ; (𝕥 , 𝕥) → refl
+    }
+```
+
+## The categorical representation of `𝔹̂-compare-𝔹̂³`
+
+I will leave the details of how to compile down to `𝔹̂-compare-𝔹̂³` as
+an exercise for you, dear reader. The result is similar to that for `𝔹̂-compare-𝔹̂²`.
+
+```
+𝔹̂-compare-𝔹̂³ : 𝔹̂² ⇨ 𝔹̂³
+𝔹̂-compare-𝔹̂³ = (⟨∧⟩ ∘ first not) ▵ (not ∘ ⟨⊕⟩) ▵ (∧ ∘ second not)
+
+𝔹̂-compare-𝔹̂³≗𝔹-compare-𝔹³ : Fₘ 𝔹̂-compare-𝔹̂³ ≗ Comparison.compare 𝔹-Comparison-𝔹³
+𝔹̂-compare-𝔹̂³≗𝔹-compare-𝔹³ =
+  λ { (𝕗 , 𝕗) → refl
+    ; (𝕗 , 𝕥) → refl
+    ; (𝕥 , 𝕗) → refl
+    ; (𝕥 , 𝕥) → refl
+    }
+
+```
+
+## Combining primitive comparison functions
+
+In this section we return to considering generic comparison functions
+that are refinements of `𝔽-compare` according to this commutative
+diagram that we have seen before:
+
+              𝔽² m,n --- 𝔽-compare --> R
+                ^                      ^
+                |                      |
+              μ ⊗ μ                    ν
+                |                      |
+              τ × τ  --- compare ----> ρ
+
+
+Consider two comparison functions `c₁ : τₘ × τₘ → ρ` and `c₂ : τₙ × τₙ
+→ ρ` where `τₘ`, `τₙ` and ‵ρ` are arbitrary types.  In this section we
+will define a combinator that can combine these two comparison
+functions into a comparison function `cᵣ : (τₘ × τₙ) × (τₘ × τₙ) → ρ`.
+
+
+The definition is inspired by considering multi-digit
+representations. However, it is more general. Note that types `τₘ` and
+`τₙ` can have different cardinality, and so this combinator could be
+used in a case where each "digit" of the input representation is of a
+different "base".
+
+In order to combine two comparison functions we need to have a
+way of combining their associated meaning functions which we denote
+`μₘ` and `μₙ`.
+
+
+```
+⟨combine⟩ : ∀ {(m , n) : ℕ²} → 𝔽² (m , n) → 𝔽 (m * n)
+⟨combine⟩ = uncurry combine
+
+_●_ : ∀ {τₘ τₙ} {(m , n) : ℕ²} (μₘ : τₘ → 𝔽 m) (μₙ : τₙ → 𝔽 n)
+    → (τₘ × τₙ → 𝔽 (m * n))
+μₘ ● μₙ = ⟨combine⟩ ∘ (μₘ ⊗ μₙ)
+```
+
+Once we can combine meaning functions we can look at generating an
+operator that, given two comparison functions, generates a comparison
+function that takes two pairs, applies `c₁` to the first element of
+each pair, `c₂` to the second element of each pair and then combines
+the two resulting values of `ρ` together somehow.
+
+But just how are these values to be combined? We can provide an
+operator `⟨△⟩ : ρ × ρ → ρ` to do just that. Earlier we defined `⟨▲⟩`
+and showed that `R` was a monoid under this associative binary
+operator. We want exactly the same for `⟨△⟩`. That is, we want `ρ` to
+be a monoid under the operator `⟨△⟩`. Further, `⟨△⟩` should be a
+refinement of `⟨▲⟩` according to the following diagram. Here `ν : ρ →
+R` is the meaning function for values of type ‵ρ`.
+
+        R × R ---- ⟨▲⟩ -----> R
           ^                   ^
           |                   |
         ν ⊗ ν                 ν
           |                   |
           |                   |
-        ρ × ρ ----- △ ------> ρ
+        ρ × ρ ---- ⟨△⟩ -----> ρ
 
+
+We define a function which generates the type signature for the proof
+that the diagram above is commutative. We will use this later when
+proving that combined comparison functions are still refinements of
+`𝔽-compare`.
 
 ```
-is-monoid-op : {ρ : Set} → (ρ → R) → (△ : ρ × ρ → ρ) → Set
-is-monoid-op ν △ = ▲ ∘ (ν ⊗ ν) ≗ ν ∘ △
+is-⟨▲⟩-refinement : {ρ : Set} → (ρ → R) → (△ : ρ × ρ → ρ) → Set
+is-⟨▲⟩-refinement ν ⟨△⟩ = ⟨▲⟩ ∘ (ν ⊗ ν) ≗ ν ∘ ⟨△⟩
 ```
 
+-------------------------- scratch
 
 ```
-comb : ∀ {(m , n) : ℕ²} → 𝔽² (m , n) → 𝔽 (n * m)
-comb = uncurry combine ∘ swap
+module ⟨△⟩-proofs {ρ : Set} where
 
-_●_ : ∀ {τₘ τₙ} {(m , n) : ℕ²} (μₘ : τₘ → 𝔽 m) (μₙ : τₙ → 𝔽 n)
-    → (τₘ × τₙ → 𝔽 (n * m))
-μₘ ● μₙ = comb ∘ (μₘ ⊗ μₙ)
+  open import Algebra.Core
+  open import Algebra.Structures  {A = ρ} (_≡_)
+  open import Algebra.Definitions {A = ρ} (_≡_)
+  open ≡-Reasoning
 
+  ⟨△⟩-is-identityˡ : {ν : ρ → R} {ν⁻¹ : R → ρ} {⟨△⟩ : ρ × ρ → ρ}
+                → ν ∘ ν⁻¹ ≡ id
+                → ν⁻¹ ∘ ν ≡ id
+                → ν⁻¹ ∘ ⟨▲⟩ ∘ (ν ⊗ ν) ≗ ⟨△⟩
+                → (∀ x → ⟨△⟩ (ν⁻¹ is= , x) ≡ x)
+  ⟨△⟩-is-identityˡ {ν} {ν⁻¹} {⟨△⟩} inverser inversel equiv = (λ x →
+        begin
+          ⟨△⟩ (ν⁻¹ is= , x)
+        ≡⟨ sym (equiv (ν⁻¹ is= , x))  ⟩
+          (ν⁻¹ ∘ ⟨▲⟩ ∘ (ν ⊗ ν)) (ν⁻¹ is= ,  x)
+        ≡⟨⟩
+          (ν⁻¹ ∘ ⟨▲⟩) ((ν ∘ ν⁻¹) is= , ν x)
+        ≡⟨ cong (λ □ → (ν⁻¹ ∘ ⟨▲⟩) (□ is= , ν x)) inverser ⟩
+          (ν⁻¹ ∘ ⟨▲⟩) (is= , ν x)
+        ≡⟨⟩
+          ν⁻¹ (⟨▲⟩ (is= , ν x))
+        ≡⟨ cong (λ □ → ν⁻¹ □) (_▲_-proofs.▲-identityˡ (ν x))  ⟩
+          (ν⁻¹ ∘ ν) x
+        ≡⟨ cong (λ □ → □ x) inversel ⟩
+          x
+        ∎)
+
+
+  ⟨△⟩-is-identityʳ : {ν : ρ → R} {ν⁻¹ : R → ρ} {⟨△⟩ : ρ × ρ → ρ}
+                → ν ∘ ν⁻¹ ≡ id
+                → ν⁻¹ ∘ ν ≡ id
+                → ν⁻¹ ∘ ⟨▲⟩ ∘ (ν ⊗ ν) ≗ ⟨△⟩
+                → (∀ x → ⟨△⟩ (x , ν⁻¹ is=) ≡ x)
+  ⟨△⟩-is-identityʳ {ν} {ν⁻¹} {⟨△⟩} inverser inversel equiv = (λ x →
+        begin
+          ⟨△⟩ (x , ν⁻¹ is=)
+        ≡⟨ sym (equiv (x , ν⁻¹ is=))  ⟩
+          (ν⁻¹ ∘ ⟨▲⟩ ∘ (ν ⊗ ν)) (x , ν⁻¹ is=)
+        ≡⟨⟩
+          (ν⁻¹ ∘ ⟨▲⟩) (ν x , (ν ∘ ν⁻¹) is=)
+        ≡⟨ cong (λ □ → ((ν⁻¹ ∘ ⟨▲⟩) (ν x , □ is=))) inverser ⟩
+          (ν⁻¹ ∘ ⟨▲⟩) (ν x , is=)
+        ≡⟨⟩
+          ν⁻¹ (⟨▲⟩ (ν x , is=))
+        ≡⟨ cong (λ □ → ν⁻¹ □) (_▲_-proofs.▲-identityʳ (ν x))  ⟩
+          (ν⁻¹ ∘ ν) x
+        ≡⟨ cong (λ □ → □ x) inversel ⟩
+          x
+        ∎)
+```
+----------------------------- scratch
+
+
+Now we can look at defining our combinator. For convenience we also
+define a type synonym `D`.
+
+```
 D : Set → Set → Set
-D ρ τ = τ × τ → ρ
+D τ ρ = τ × τ → ρ
 
-mk-●̂ : ∀ {ρ τₘ τₙ} → (ρ × ρ → ρ) → D ρ τₘ → D ρ τₙ → D ρ (τₘ × τₙ)
-mk-●̂ op compareₘ compareₙ  ((aₘ , aₙ)  , (bₘ , bₙ)) =
+mk-●̂ : ∀ {ρ τₘ τₙ} → (ρ × ρ → ρ) → D τₘ ρ → D τₙ ρ → D (τₘ × τₙ) ρ
+mk-●̂ ⟨△⟩ compareₘ compareₙ = λ ((aₘ , aₙ)  , (bₘ , bₙ)) →
   let ρ₁ = compareₘ (aₘ , bₘ)
       ρ₂ = compareₙ (aₙ , bₙ)
-  in op (ρ₁ , ρ₂)
+  in ⟨△⟩ (ρ₁ , ρ₂)
 ```
 
-Now let's try to define a 2-bit comparison.
+In categorical terms this can be defined as follows. We use the `■`
+symbol as an analogue of the `●` symbol whenever we are expressing
+definitions using a categorical representation.
 
 ```
-opᴮ₀ : 𝔹² × 𝔹² → 𝔹²
-opᴮ₀ ((𝕥 , b) , r₂) = (𝕥 , b)
-opᴮ₀ ((𝕗 , 𝕗) , r₂) = (𝕗 , 𝕗)
-opᴮ₀ ((𝕗 , 𝕥) , r₂) = r₂
+D̂ : Ty → Ty → Set
+D̂ τ ρ = τ × τ ⇨ ρ
 
-opᴮ : 𝔹² × 𝔹² → 𝔹²
-opᴮ = cond ∘ ((exl ∘ exl) ▵ else ▵ exl)
+mk-■̂ : ∀ {ρ τₘ τₙ} → (ρ × ρ ⇨ ρ) → D̂ τₘ ρ → D̂ τₙ ρ → D̂ (τₘ × τₙ) ρ
+mk-■̂ ⟨△⟩ compareₘ compareₙ = ⟨△⟩ ∘ (compareₘ ⊗ compareₙ) ∘ transpose
+```
+
+## A combinator for the `𝔹²` representation of `R`
+
+In this section we attempt to refine `⟨▲⟩` to `⟨△-𝔹²⟩ : 𝔹² × 𝔹² → 𝔹²`
+
+By carefully looking at the definition of `⟨▲⟩` we can guess that the
+definition should be. A first attempt is:
+
+
+```
+⟨△-𝔹²⟩₀ : 𝔹² × 𝔹² → 𝔹²
+⟨△-𝔹²⟩₀ ((𝕥 , b) , r₂) = (𝕥 , b)
+⟨△-𝔹²⟩₀ ((𝕗 , 𝕗) , r₂) = (𝕗 , 𝕗)
+⟨△-𝔹²⟩₀ ((𝕗 , 𝕥) , r₂) = r₂
+```
+
+However, closer scrutiny yields this more succinct definition
+
+```
+⟨△-𝔹²⟩ : 𝔹² × 𝔹² → 𝔹²
+⟨△-𝔹²⟩ ((𝕗 , 𝕥) , r₂) = r₂
+⟨△-𝔹²⟩ (r₁    ,  r₂) = r₁
+```
+
+This translates to a categorical representation as follows:
+
+```
+⟨△-𝔹̂²⟩ : 𝔹̂² × 𝔹̂² ⇨ 𝔹̂²
+⟨△-𝔹̂²⟩ = cond ∘ ( (⟨∧⟩ ∘ (first not) ∘ exl) ▵ exl ▵ exr)
+
+
+⟨△-𝔹̂²⟩≗⟨△-𝔹²⟩ : Fₘ ⟨△-𝔹̂²⟩ ≗ ⟨△-𝔹²⟩
+⟨△-𝔹̂²⟩≗⟨△-𝔹²⟩ =
+  λ { ((𝕗 , 𝕗) , _) →  refl
+    ; ((𝕗 , 𝕥) , _) →  refl
+    ; ((𝕥 , 𝕗) , _) →  refl
+    ; ((𝕥 , 𝕥) , _) →  refl
+    }
+```
+
+We can also show that it's a refinement of `⟨▲⟩`, and a monoid operator.
+
+```
+⟨△-𝔹̂²⟩-is-⟨▲⟩-refinement : is-⟨▲⟩-refinement 𝔹²-to-R (Fₘ ⟨△-𝔹̂²⟩)
+⟨△-𝔹̂²⟩-is-⟨▲⟩-refinement =
+  λ { ((𝕗 , 𝕗) , _) → refl
+    ; ((𝕗 , 𝕥) , _) → refl
+    ; ((𝕥 , _) , _) → refl
+    }
+```
+
+## A combinator for the `𝔹³` representation of `R`
+
+A first attempt at the monoid operator is achieved by some simple
+equational reasoning on the definition of `⟨▲⟩`.
+
+```
+⟨△-𝔹³⟩₀ : 𝔹³ × 𝔹³ → 𝔹³
+⟨△-𝔹³⟩₀ (v@(𝕥 , _ , _) , r₂) = v
+⟨△-𝔹³⟩₀ (  (𝕗 , 𝕥 , _) , r₂) = r₂
+⟨△-𝔹³⟩₀ (v@(𝕗 , 𝕗 , 𝕥) , r₂) = v
+⟨△-𝔹³⟩₀ (v@(𝕗 , 𝕗 , 𝕗) , r₂) = v
+```
+
+However, it quickly becomes clear that the following definition is
+equivalent.
+
+```
+⟨△-𝔹³⟩ : 𝔹³ × 𝔹³ → 𝔹³
+⟨△-𝔹³⟩ (  (𝕗 , 𝕥 , _) , r₂) = r₂
+⟨△-𝔹³⟩ (  r₁         , r₂) = r₁
+```
+
+The translation to a categorical representation is straightforward.
+
+```
+⟨△-𝔹̂³⟩ : 𝔹̂³ × 𝔹̂³ ⇨ 𝔹̂³
+⟨△-𝔹̂³⟩ = cond ∘ ((⟨∧⟩ ∘ ((not ∘ e₁) ▵ e₂)) ▵ exl ▵ exr)
   where
-    else : 𝔹² × 𝔹² → 𝔹²
-    else = cond ∘ ((not ∘ ∨ ∘ exl) ▵ exr  ▵ exl)
-
-opᴮ≗opᴮ₀ : opᴮ ≗ opᴮ₀
-opᴮ≗opᴮ₀ = λ { ((𝕗 , 𝕗) , _) →  refl
-             ; ((𝕗 , 𝕥) , _) →  refl
-             ; ((𝕥 , 𝕗) , _) →  refl
-             ; ((𝕥 , 𝕥) , _) →  refl
-             }
+    e₁ e₂ : 𝔹̂³ × 𝔹̂³ ⇨ 𝔹̂
+    e₁ = exl ∘ exl
+    e₂ = exl ∘ exr ∘ exl
 ```
 
-Let's see if we can show it's a monoid op.
+And finally we prove it's a refinement of `⟨▲⟩` and a monoid-operator.
 
 ```
-opᴮ-is-monoid-op : is-monoid-op 𝔹²-to-R opᴮ
-opᴮ-is-monoid-op = λ { ((𝕗 , 𝕗) , _) → refl
-                     ; ((𝕗 , 𝕥) , _) → refl
-                     ; ((𝕥 , _) , _) → refl
-                     }
-```
-
-Now let's try it with comparison function with three values.
+⟨△-𝔹̂³⟩-is-⟨▲⟩-refinement : is-⟨▲⟩-refinement 𝔹³-to-R (Fₘ ⟨△-𝔹̂³⟩)
+⟨△-𝔹̂³⟩-is-⟨▲⟩-refinement = λ { ((𝕥 , _ , _) , _) → refl
+                        ; ((𝕗 , 𝕥 , _) , _) → refl
+                        ; ((𝕗 , 𝕗 , 𝕥) , _) → refl
+                        ; ((𝕗 , 𝕗 , 𝕗) , _) → refl
+                        }
 
 ```
-opᴮ³ : 𝔹³ × 𝔹³ → 𝔹³
-opᴮ³ ((𝕥 , _ , _) , r₂) = (𝕥 , 𝕗 , 𝕗)
-opᴮ³ ((𝕗 , 𝕥 , _) , r₂) = r₂
-opᴮ³ ((𝕗 , 𝕗 , 𝕥) , r₂) = (𝕗 , 𝕗 , 𝕥)
-opᴮ³ ((𝕗 , 𝕗 , 𝕗) , r₂) = (𝕥 , 𝕗 , 𝕗)
 
-opᴮ³-is-monoid-op : is-monoid-op 𝔹³-to-R opᴮ³
-opᴮ³-is-monoid-op = λ { ((𝕥 , _ , _) , _) → refl
-                      ; ((𝕗 , 𝕥 , _) , _) → refl
-                      ; ((𝕗 , 𝕗 , 𝕥) , _) → refl
-                      ; ((𝕗 , 𝕗 , 𝕗) , _) → refl
-                      }
+-------------------
+-- scratch
+
+```
+module ⟨△⟩-proofs-2 where
+
+  open import Algebra.Core
+  open import Algebra.Structures  {A = 𝔹²} (_≡_)
+  open import Algebra.Definitions {A = 𝔹²} (_≡_)
+
+  _△_ : 𝔹² → 𝔹² → 𝔹²
+  _△_ = curry ⟨△-𝔹²⟩
+
+  △-identityˡ : LeftIdentity (𝕗 , 𝕥) _△_
+  △-identityˡ _ = refl
+
+  △-identityʳ : RightIdentity (𝕗 , 𝕥) _△_
+  △-identityʳ (𝕗 , 𝕗) = refl
+  △-identityʳ (𝕗 , 𝕥) = refl
+  △-identityʳ (𝕥 , 𝕗) = refl
+  △-identityʳ (𝕥 , 𝕥) = refl
+
+  △-assoc : Associative _△_
+  △-assoc (𝕗 , 𝕗) _ _ = refl
+  △-assoc (𝕗 , 𝕥) _ _ = refl
+  △-assoc (𝕥 , 𝕗) _ _ = refl
+  △-assoc (𝕥 , 𝕥) _ _ = refl
+
+{-module ⟨△⟩-proofs-3 where
+
+  open import Algebra.Core
+  open import Algebra.Structures  {A = 𝔹³} (_≡_)
+  open import Algebra.Definitions {A = 𝔹³} (_≡_)
+
+  _△_ : 𝔹³ → 𝔹³ → 𝔹³
+  _△_ = curry ⟨△-𝔹³⟩
+
+  △-identityˡ : LeftIdentity (𝕗 , 𝕥 , 𝕗) _△_
+  △-identityˡ _ = refl
+
+  _ : Set
+  _ = {! ((𝕗 , 𝕥 , 𝕥) △ (𝕗 , 𝕥 , 𝕗))  !}
+
+  △-identityʳ : RightIdentity (𝕗 , 𝕥 , 𝕗) _△_
+  △-identityʳ (𝕗 , 𝕗 , 𝕗) = refl
+  △-identityʳ (𝕗 , 𝕗 , 𝕥) = refl
+  △-identityʳ (𝕗 , 𝕥 , 𝕗) = refl
+  △-identityʳ (𝕗 , 𝕥 , 𝕥) = refl
+  △-identityʳ (𝕥 , 𝕗 , 𝕗) = refl
+  △-identityʳ (𝕥 , 𝕗 , 𝕥) = refl
+  △-identityʳ (𝕥 , 𝕥 , 𝕗) = refl
+  △-identityʳ (𝕥 , 𝕥 , 𝕥) = refl-}
+
+{-  △-assoc : Associative _△_
+  △-assoc (𝕗 , 𝕗) _ _ = refl
+  △-assoc (𝕗 , 𝕥) _ _ = refl
+  △-assoc (𝕥 , 𝕗) _ _ = refl
+  △-assoc (𝕥 , 𝕥) _ _ = refl
+  -}
+
+
 ```
 
-[TODO: Think about what to do here]
+
+
+
+
+------------------
+
 
 
 ```
@@ -921,6 +1278,7 @@ And now a 4-bit comparison.
 ## The diagrams
 
 ```
+{-
 open import Ty
 open import Categorical.Free.Homomorphism Function renaming (_⇨_ to _↦_)
 
@@ -955,9 +1313,11 @@ opᴮ̂ = cond ∘ ((exl ∘ exl) ▵ else ▵ exl)
 
 -- Fₘ-𝔹⁴-compareᶜC : Fₘ 𝔹⁴-compareC ≡ 𝔹⁴-compare
 -- Fₘ-𝔹⁴-compareᶜC  = refl
+-}
 ```
 
 ```
+{-
 open import Level using (0ℓ)
 open import IO
 open import Data.String hiding (_≟_)
@@ -975,6 +1335,7 @@ example name c = T.example name (Fₘ c)
 main = run do
   example "boolean-compare" 𝔹-compareC
   example "4-bit-compare" 𝔹⁴-compareC
+-}
 ```
 
 
@@ -1158,21 +1519,24 @@ machine-checked, facts to yield a preliminary definition for
 𝕥-is-one : 𝔹-to-𝔽2 𝕥 ≡ suc zero
 𝕥-is-one = refl
 
-𝔹-compare-𝔹²₀ : 𝔹² → 𝔹²
+{-𝔹-compare-𝔹²₀ : 𝔹² → 𝔹²
 𝔹-compare-𝔹²₀ (𝕗 , 𝕗) = R-to-𝔹² is=
 𝔹-compare-𝔹²₀ (𝕗 , 𝕥) = R-to-𝔹² is<
 𝔹-compare-𝔹²₀ (𝕥 , 𝕗) = R-to-𝔹² is>
 𝔹-compare-𝔹²₀ (𝕥 , 𝕥) = 𝔹-compare-𝔹²₀ (𝕗 , 𝕗)
+-}
 ```
 
 Simplifying, this yields
 
 ```
+{-
 𝔹-compare-𝔹²₁ : 𝔹² → 𝔹²
 𝔹-compare-𝔹²₁ (𝕗 , 𝕗) = (𝕗 , 𝕥)
 𝔹-compare-𝔹²₁ (𝕗 , 𝕥) = (𝕥 , 𝕗)
 𝔹-compare-𝔹²₁ (𝕥 , 𝕗) = (𝕗 , 𝕗)
 𝔹-compare-𝔹²₁ (𝕥 , 𝕥) = (𝕗 , 𝕥)
+-}
 ```
 
 This can be simplified to use the "fork" operator `▵`.
