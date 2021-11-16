@@ -8,7 +8,7 @@ module Inequality where
 open import Relation.Binary.Core using (Rel)
 open import Data.Bool renaming (Bool to 𝔹) hiding (_≤_;not;_∧_; true; false)
 open import Data.Bool.Properties
-open import Data.Nat hiding (_≤_ ; _≤ᵇ_;_≟_; compare)
+open import Data.Nat hiding (_≤_ ; _≤ᵇ_;_≟_; compare; _⊔_)
 import Data.Nat as ℕ
 open import Data.Unit using (tt)
 open import Data.Empty
@@ -1177,83 +1177,13 @@ And finally we prove it's a refinement of `⟨▲⟩` and a monoid-operator.
 
 ```
 ⟨△-𝔹̂³⟩-is-⟨▲⟩-refinement : is-⟨▲⟩-refinement 𝔹³-to-R (Fₘ ⟨△-𝔹̂³⟩)
-⟨△-𝔹̂³⟩-is-⟨▲⟩-refinement = λ { ((𝕥 , _ , _) , _) → refl
-                        ; ((𝕗 , 𝕥 , _) , _) → refl
-                        ; ((𝕗 , 𝕗 , 𝕥) , _) → refl
-                        ; ((𝕗 , 𝕗 , 𝕗) , _) → refl
-                        }
-
+⟨△-𝔹̂³⟩-is-⟨▲⟩-refinement =
+  λ { ((𝕥 , _ , _) , _) → refl
+    ; ((𝕗 , 𝕥 , _) , _) → refl
+    ; ((𝕗 , 𝕗 , 𝕥) , _) → refl
+    ; ((𝕗 , 𝕗 , 𝕗) , _) → refl
+    }
 ```
-
--------------------
--- scratch
-
-```
-module ⟨△⟩-proofs-2 where
-
-  open import Algebra.Core
-  open import Algebra.Structures  {A = 𝔹²} (_≡_)
-  open import Algebra.Definitions {A = 𝔹²} (_≡_)
-
-  _△_ : 𝔹² → 𝔹² → 𝔹²
-  _△_ = curry ⟨△-𝔹²⟩
-
-  △-identityˡ : LeftIdentity (𝕗 , 𝕥) _△_
-  △-identityˡ _ = refl
-
-  △-identityʳ : RightIdentity (𝕗 , 𝕥) _△_
-  △-identityʳ (𝕗 , 𝕗) = refl
-  △-identityʳ (𝕗 , 𝕥) = refl
-  △-identityʳ (𝕥 , 𝕗) = refl
-  △-identityʳ (𝕥 , 𝕥) = refl
-
-  △-assoc : Associative _△_
-  △-assoc (𝕗 , 𝕗) _ _ = refl
-  △-assoc (𝕗 , 𝕥) _ _ = refl
-  △-assoc (𝕥 , 𝕗) _ _ = refl
-  △-assoc (𝕥 , 𝕥) _ _ = refl
-
-{-module ⟨△⟩-proofs-3 where
-
-  open import Algebra.Core
-  open import Algebra.Structures  {A = 𝔹³} (_≡_)
-  open import Algebra.Definitions {A = 𝔹³} (_≡_)
-
-  _△_ : 𝔹³ → 𝔹³ → 𝔹³
-  _△_ = curry ⟨△-𝔹³⟩
-
-  △-identityˡ : LeftIdentity (𝕗 , 𝕥 , 𝕗) _△_
-  △-identityˡ _ = refl
-
-  _ : Set
-  _ = {! ((𝕗 , 𝕥 , 𝕥) △ (𝕗 , 𝕥 , 𝕗))  !}
-
-  △-identityʳ : RightIdentity (𝕗 , 𝕥 , 𝕗) _△_
-  △-identityʳ (𝕗 , 𝕗 , 𝕗) = refl
-  △-identityʳ (𝕗 , 𝕗 , 𝕥) = refl
-  △-identityʳ (𝕗 , 𝕥 , 𝕗) = refl
-  △-identityʳ (𝕗 , 𝕥 , 𝕥) = refl
-  △-identityʳ (𝕥 , 𝕗 , 𝕗) = refl
-  △-identityʳ (𝕥 , 𝕗 , 𝕥) = refl
-  △-identityʳ (𝕥 , 𝕥 , 𝕗) = refl
-  △-identityʳ (𝕥 , 𝕥 , 𝕥) = refl-}
-
-{-  △-assoc : Associative _△_
-  △-assoc (𝕗 , 𝕗) _ _ = refl
-  △-assoc (𝕗 , 𝕥) _ _ = refl
-  △-assoc (𝕥 , 𝕗) _ _ = refl
-  △-assoc (𝕥 , 𝕥) _ _ = refl
-  -}
-
-
-```
-
-
-
-
-
-------------------
-
 
 
 ```
@@ -1407,3 +1337,89 @@ R-to-Σ𝔹∘Σ𝔹³-to-R ( (𝕗 , 𝕗 , 𝕥) , refl) = refl
 
 However, I don't yet know how to make this work with Conal's work on
 Compiling to Categories. This is an open problem at this point.
+
+
+
+
+
+
+
+
+
+-------------------------------------- begin scratch 2
+
+```agda
+module homo-monoid-proof {ρ : Set} (ν : ρ → R) (⟨△⟩ : ρ × ρ → ρ) (e : ρ)
+    ⦃ e-is= : ν e ≡ is= ⦄
+    (is-refine : is-⟨▲⟩-refinement ν ⟨△⟩)
+  where
+
+  homo : ∀ x y → ν (⟨△⟩ (x , y)) ≡ ⟨▲⟩ (ν x , ν y)
+  homo x y = sym (is-refine (x , y))
+
+  _≈ρ_ : ρ → ρ → Set
+  a ≈ρ b = ν a ≡ ν b
+
+  open import Algebra.Core
+  open import Algebra.Definitions {A = ρ} _≈ρ_
+  open import Algebra.Structures {A = ρ} _≈ρ_
+  open import Relation.Binary.Structures {A = ρ} _≈ρ_
+  open import Level
+  open import Relation.Binary.Bundles
+
+  ≈ρ-isEquivalence : IsEquivalence
+  ≈ρ-isEquivalence =
+    record
+      { refl  = refl
+      ; sym   = sym
+      ; trans = Relation.Binary.PropositionalEquality.trans
+      }
+
+  ≈ρ-setoid : Setoid 0ℓ 0ℓ
+  ≈ρ-setoid =
+    record
+      { Carrier = ρ
+      ; _≈_ = _≈ρ_
+      ; isEquivalence = ≈ρ-isEquivalence
+      }
+
+  _△_ : Op₂ ρ
+  _△_ = curry ⟨△⟩
+
+  △-identityˡ : LeftIdentity e _△_
+  △-identityˡ x rewrite homo e x | e-is= = _▲_-proofs.▲-identityˡ (ν x)
+
+  △-identityʳ : RightIdentity e _△_
+  △-identityʳ x rewrite homo x e | e-is= = _▲_-proofs.▲-identityʳ (ν x)
+
+  △-identity : Identity e _△_
+  △-identity =  △-identityˡ , △-identityʳ
+
+  △-assoc : Associative _△_
+  △-assoc x y z rewrite homo ((⟨△⟩ (x , y))) z | homo x y |
+                        homo x (⟨△⟩ (y , z)) | homo y z =
+    _▲_-proofs.▲-assoc (ν x) (ν y) (ν z)
+
+  △-cong : ∀ {x y u v} → x ≈ρ y → u ≈ρ v → (x △ u) ≈ρ (y △ v)
+  △-cong {x} {y} {u} {v} x≈ρy u≈ρv rewrite homo x u | x≈ρy | homo y v | u≈ρv = refl
+
+  △-isMagma : IsMagma _△_
+  △-isMagma = record { isEquivalence = ≈ρ-isEquivalence; ∙-cong = △-cong  }
+
+  △-isSemigroup : IsSemigroup _△_
+  △-isSemigroup = record { isMagma = △-isMagma; assoc = △-assoc }
+
+  △-isMonoid : IsMonoid _△_ e
+  △-isMonoid = record { isSemigroup = △-isSemigroup; identity = △-identity }
+
+
+
+_ : Set
+_ = {! ⟨△-𝔹̂³⟩-is-⟨▲⟩-refinement  !}
+```
+
+And now to test
+
+```
+open homo-monoid-proof 𝔹³-to-R (Fₘ ⟨△-𝔹̂³⟩) (𝕗 , 𝕥 , 𝕗) ⟨△-𝔹̂³⟩-is-⟨▲⟩-refinement
+```
