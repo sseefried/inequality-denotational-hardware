@@ -17,9 +17,9 @@ record Monoid (A : Set) : Set₁ where
    infixr 29 _∙_
    field
       _∙_ : Op₂ A
-      ε : A
+      ε   : A
 
-open Monoid ⦃ … ⦄  public
+open Monoid ⦃ … ⦄ public
 
 record MonoidHomomorphism (⟦_⟧ : A → B) (_≈₂_ : B → B → Set)
                           ⦃ _ : Monoid A ⦄ ⦃ _ : Monoid B ⦄ : Set where
@@ -106,5 +106,5 @@ record MonoidHomomorphism (⟦_⟧ : A → B) (_≈₂_ : B → B → Set)
         ≈⟨ sym  (∙-congˡ (monoid-homo-op y z)) ⟩
           ⟦ x ⟧ ∙ ⟦ y ∙ z ⟧
         ≈⟨ sym (monoid-homo-op x (y ∙ z)) ⟩
-          ⟦ x  ∙  (y ∙ z) ⟧
+          ⟦ x ∙ (y ∙ z) ⟧
         ∎
