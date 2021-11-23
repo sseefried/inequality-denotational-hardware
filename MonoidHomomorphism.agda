@@ -36,8 +36,8 @@ record MonoidHomomorphism (⟦_⟧ : A → B) (_≈₂_ : B → B → Set)
   _≈₁_ : A → A → Set
   a ≈₁ b = ⟦ a ⟧ ≈₂ ⟦ b ⟧
 
-  is-monoid₁ : IsMonoid _≈₂_ _∙_ ε → IsMonoid _≈₁_ _∙_ ε
-  is-monoid₁ is-monoid₂ =
+  is-monoid-via-homomorphism : IsMonoid _≈₂_ _∙_ ε → IsMonoid _≈₁_ _∙_ ε
+  is-monoid-via-homomorphism is-monoid₂ =
     record
       { isSemigroup =
           record
