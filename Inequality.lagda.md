@@ -78,7 +78,7 @@ shorthand for finite sets and booleans respectively. The "squared"
 versions of these types (and natural numbers) allow us to succinctly
 denote products of these types.
 
-```
+```agda
 ℕ² : Set
 ℕ² = ℕ × ℕ
 
@@ -94,7 +94,7 @@ slightly different, but equivalent, definition to the definition of
 `_≤ᵇ_` in the Agda Standard Library. We have renamed it for clarity.
 
 
-```
+```agda
 ℕ≤ : ℕ² → 𝔹
 ℕ≤ (zero , _)      = 𝕥
 ℕ≤ (suc m , zero)  = 𝕗
@@ -124,7 +124,7 @@ The RHS simplifies to `λ x y → toℕ x ℕ.≤ toℕ y`
 We choose to implement `_𝔽≤_` in a similar way. We directly define it as:
 
 
-```
+```agda
 𝔽≤ : {i,j : ℕ²} → 𝔽² i,j → 𝔹
 𝔽≤ (m , n) = ℕ≤ (toℕ m , toℕ n)
 ```
@@ -142,7 +142,7 @@ want this refinement to have.
 
 Function `toℕ²` is defined as:
 
-```
+```agda
 toℕ² : {i,j : ℕ²} → 𝔽² i,j → ℕ²
 toℕ² (m , n) = (toℕ m , toℕ n)
 ```
@@ -151,14 +151,14 @@ Let's start with a trivial proof of the commutativity of the
 diagram. The type of `toℕ²` so closely follows the body of `𝔽≤` that
 we can just use `refl`.
 
-```
+```agda
 toℕ-≤ : {i,j : ℕ²} → 𝔽≤ {i,j} ≗ ℕ≤ ∘ toℕ²
 toℕ-≤ _ = refl
 ```
 
 Let's now encapsulate that proof using an instance of an _arrow category_.
 
-```
+```agda
 𝔽≤⇉ : {i,j : ℕ²} → toℕ² {i,j} ⇉ id
 𝔽≤⇉ = arr 𝔽≤ ℕ≤ toℕ-≤
 ```
@@ -199,7 +199,7 @@ reveal why. For now, we'll continue in this direction.
 It looks like we are going to need to define less-than and equality
 operators for both `ℕ` and `𝔽`.
 
-```
+```agda
 𝔽< : {i,j : ℕ²} → 𝔽² i,j → 𝔹
 𝔽< (zero  , suc _) = 𝕥
 𝔽< (_     , zero ) = 𝕗
@@ -240,7 +240,7 @@ following data type `R` which denotes whether two numbers are
 less-than, equal, or greater-than each other respectively.
 
 
-```
+```agda
 data R : Set where
   is< : R
   is= : R
@@ -252,7 +252,7 @@ less-than-or-equal function which returns a boolean we will now
 require an auxillary function of type `R → 𝔹`. Fortunately, this
 is trivial to define.
 
-```
+```agda
 R-is≤ : R → 𝔹
 R-is≤ is< = 𝕥
 R-is≤ is= = 𝕥
@@ -268,7 +268,7 @@ inequality relations. This delights me.
 Now that we have declared the `R` data type we no longer have need of
 functions `𝔽<`, `𝔽=`, etc. Instead we define a function `𝔽-compare`.
 
-```
+```agda
 𝔽-compare : {i,j : ℕ²} → 𝔽² i,j → R
 𝔽-compare (zero , zero)    = is=
 𝔽-compare (zero , suc _)   = is<
@@ -279,7 +279,7 @@ functions `𝔽<`, `𝔽=`, etc. Instead we define a function `𝔽-compare`.
 We also define an equivalent function on ℕ and prove a correspondence
 between the two.
 
-```
+```agda
 ℕ-compare : ℕ² → R
 ℕ-compare (zero , zero)    = is=
 ℕ-compare (zero , suc _)   = is<
@@ -294,7 +294,7 @@ between the two.
         |                      |
        𝔽 i,j --- 𝔽-compare --> R
 
-```
+```agda
 toℕ²-ℕ-compare : {i,j : ℕ²} → 𝔽-compare {i,j} ≗ ℕ-compare ∘ toℕ²
 toℕ²-ℕ-compare (zero  , zero)  = refl
 toℕ²-ℕ-compare (zero  , suc _) = refl
@@ -304,7 +304,7 @@ toℕ²-ℕ-compare (suc m , suc n) = toℕ²-ℕ-compare (m , n)
 
 We package this up as a SIM Proof as follows:
 
-```
+```agda
 𝔽-compare⇉ : {i,j : ℕ²} → toℕ² {i,j} ⇉ id
 𝔽-compare⇉  = arr 𝔽-compare ℕ-compare toℕ²-ℕ-compare
 ```
@@ -404,7 +404,9 @@ evaluation order is slightly different. However, evaluating `((a ⊕ b)
 
       (a ⊕ b) ⊕ (c ⊕ d)
     ≡ e ⊕ f     where e = a ⊕ b and f = c ⊕ d
-    ≡ g               where g = e ⊕ f
+    ≡ g         where g = e ⊕ f
+
+[TODO: Use the term "parallel call-by-value]
 
 This takes only 2 steps to evaluate because, in the first step `a
 ⊕ b` and `c ⊕ d` can be evaluated in parallel.
@@ -442,7 +444,7 @@ consider lexicographic ordering of strings.
 This leads to the following definition of the operator, which we have
 called `⟨▲⟩`.
 
-```
+```agda
 ⟨▲⟩ : R × R → R
 ⟨▲⟩ (is= , r₂) = r₂
 ⟨▲⟩ (is< , _)  = is<
@@ -458,7 +460,7 @@ To do this we use the Standard Library's `Algebra` modules. This
 requires we uncurry the `⟨▲⟩` operator as their definitions are only
 defined in terms of uncurried functions.
 
-```
+```agda
 module _▲_-proofs where
   open import Algebra.Core
   open import Algebra.Structures {A = R} (_≡_)
@@ -469,7 +471,7 @@ module _▲_-proofs where
   _▲_ = curry ⟨▲⟩
 ```
 
-```
+```agda
   ▲-identityˡ : LeftIdentity is= _▲_
   ▲-identityˡ _ = refl
 
@@ -535,7 +537,7 @@ We will want to prove that this diagram commutes for many different
 `μ` and `ν` values so we introduce a function `is-compare` that yields
 the proposition we wish to prove.
 
-```
+```agda
 is-compare : {ρ τ : Set} {k : ℕ} (μ : τ → 𝔽 k) (ν : ρ → R) (compare : τ × τ → ρ) → Set
 is-compare μ ν compare = ν ∘ compare ≗ 𝔽-compare ∘ (μ ⊗ μ)
 ```
@@ -544,7 +546,7 @@ We also introduce a new record, `Comparison`, which contains as its
 fields a `compare` function and the proof that it is a compare
 function (i.e. satisfies `is-compare μ ν compare`).
 
-```
+```agda
 record Comparison {ρ τ : Set} {k : ℕ} (μ : τ → 𝔽 k) (ν : ρ → R): Set where
   constructor _⊣_
   field
@@ -567,7 +569,7 @@ the comparison function with respect to `ℕ-compare`, and
 A finite set of cardinality 2 (`𝔽 2`) can be represented by a single
 bit. Accordingly we define two functions to convert to and from bits.
 
-```
+```agda
 F𝟚-to-𝔹 : 𝔽 2 → 𝔹
 F𝟚-to-𝔹 zero       = 𝕗
 F𝟚-to-𝔹 (suc zero) = 𝕥
@@ -579,7 +581,7 @@ F𝟚-to-𝔹 (suc zero) = 𝕥
 
 We also prove that they are inverses of each other
 
-```
+```agda
 F𝟚-to-𝔹∘𝔹-to-𝔽2≗ : F𝟚-to-𝔹 ∘ 𝔹-to-𝔽2 ≗ id
 F𝟚-to-𝔹∘𝔹-to-𝔽2≗ = λ { 𝕥 → refl; 𝕗 → refl }
 
@@ -602,7 +604,7 @@ and a proof of right invertibility i.e. `ν ∘ ν⁻¹ ≗ id`.
 
 A convenient way to do this is to package up these three things into a Agda record type.
 
-```
+```agda
 record R-Rep (ρ : Set) : Set where
   field
     ν   : ρ → R
@@ -619,7 +621,7 @@ type `𝔽 2` the recursive case of the definition with pattern
 represented by the value `𝕥`. The right-hand side of that case "strips
 the `suc`s off" yielding `𝔹-compare-ρ rr (𝕗 , 𝕗)`.
 
-```
+```agda
 𝔹-compare-ρ₀ : {ρ : Set} → (nu : R-Rep ρ) → 𝔹² → ρ
 𝔹-compare-ρ₀ rr (𝕗 , 𝕗) = (R-Rep.ν⁻¹ rr) is=
 𝔹-compare-ρ₀ rr (𝕗 , 𝕥) = (R-Rep.ν⁻¹ rr) is<
@@ -629,7 +631,7 @@ the `suc`s off" yielding `𝔹-compare-ρ rr (𝕗 , 𝕗)`.
 
 But we can further simplify this via equational reasoning to:
 
-```
+```agda
 𝔹-compare-ρ : {ρ : Set} → R-Rep ρ → 𝔹² → ρ
 𝔹-compare-ρ rr (𝕗 , 𝕗) = (R-Rep.ν⁻¹ rr) is=
 𝔹-compare-ρ rr (𝕗 , 𝕥) = (R-Rep.ν⁻¹ rr) is<
@@ -640,7 +642,7 @@ But we can further simplify this via equational reasoning to:
 Next we define a function that specialise `is-compare` to `τ = 𝔹`.
 
 
-```
+```agda
 is-𝔹-compare : {ρ : Set} → (rr : R-Rep ρ) → Set
 is-𝔹-compare rr = is-compare 𝔹-to-𝔽2 (R-Rep.ν rr) (𝔹-compare-ρ rr)
 ```
@@ -666,7 +668,7 @@ we choose and encoding where each element of the pair means
 something. The first element represents whether the value is `is<` and
 the second whether the value is `is=`. This gives us:
 
-```
+```agda
 R-to-𝔹² : R → 𝔹²
 R-to-𝔹² is< = (𝕥 , 𝕗)
 R-to-𝔹² is= = (𝕗 , 𝕥)
@@ -687,7 +689,7 @@ booleans to mean that the second component only has a meaning if the
 first component is `𝕗`. This leads to this definition:
 
 
-```
+```agda
 𝔹²-to-R :  𝔹² → R
 𝔹²-to-R (𝕥 , _) = is<
 𝔹²-to-R (𝕗 , 𝕥) = is=
@@ -710,14 +712,14 @@ It seems common in traditional hardware design to use a "one-hot"
 3-bit representation of the `R` type. That is, three wires only one of
 which can be true, the rest being false.
 
-```
+```agda
 𝔹³ : Set
 𝔹³ = 𝔹 × 𝔹 × 𝔹
 ```
 
 Defining `R-to-𝔹³` is straightforward.
 
-```
+```agda
 R-to-𝔹³ : R → 𝔹³
 R-to-𝔹³ is< = (𝕥 , 𝕗 , 𝕗)
 R-to-𝔹³ is= = (𝕗 , 𝕥 , 𝕗)
@@ -742,7 +744,7 @@ over the `is>` value but only when an `𝕗` appears in the `is<`
 position. This leads us to the following definition:
 
 
-```
+```agda
 𝔹³-to-R : 𝔹³ → R
 𝔹³-to-R (𝕗 , 𝕗 , 𝕗) = is<
 𝔹³-to-R (𝕥 , _ , _) = is<
@@ -756,7 +758,7 @@ We can now create two `R-Rep` values for the case where `R` is
 represented by `𝔹²` and ‵𝔹³` respectively. The proofs of right
 invertibility are straightforward and done by exhaustion.
 
-```
+```agda
 𝔹²-rr : R-Rep 𝔹²
 𝔹²-rr = record { ν = 𝔹²-to-R ; ν⁻¹ = R-to-𝔹² ; right-invertible = λ { is< → refl ; is= → refl ; is> → refl } }
 
@@ -767,7 +769,7 @@ invertibility are straightforward and done by exhaustion.
 Given a value `rr : R-Rep ρ` we can prove `is-𝔹-compare rr` using the following
 reasoning:
 
-```
+```agda
 rr-to-is-𝔹-compare : {ρ : Set} → (rr : R-Rep ρ) → is-𝔹-compare rr
 rr-to-is-𝔹-compare rr =
     λ { f,f@(𝕗 , 𝕗) → p {f,f} {is=} refl refl
@@ -798,7 +800,7 @@ rr-to-is-𝔹-compare rr =
 
 We can now complete the definition of `mk-𝔹-Comparison`.
 
-```
+```agda
 mk-𝔹-Comparison : {ρ : Set} → (rr : R-Rep ρ) → Comparison 𝔹-to-𝔽2 (R-Rep.ν rr)
 mk-𝔹-Comparison {ρ} rr = 𝔹-compare-ρ rr ⊣ (rr-to-is-𝔹-compare rr)
 ```
@@ -807,7 +809,7 @@ We can now plug in the two `R-Rep` values we defined above to generate
 comparison functions _along with their proofs_.
 
 
-```
+```agda
 𝔹-Comparison-𝔹² : Comparison 𝔹-to-𝔽2 𝔹²-to-R
 𝔹-Comparison-𝔹² = mk-𝔹-Comparison 𝔹²-rr
 
@@ -829,7 +831,7 @@ representation.
 
 ### Some necessary abbreviations
 
-```
+```agda
 open import Ty
 open import Categorical.Free.Homomorphism Function
 
@@ -854,7 +856,7 @@ We'll start the hand-compilation process by writing down an equivalent
 function `𝔹-compare-𝔹²₀`. We do this by consulting the definition of
 `𝔹-compare-ρ` and `R-to-𝔹²`. We get:
 
-```
+```agda
 𝔹-compare-𝔹²₀ : 𝔹² → 𝔹²
 𝔹-compare-𝔹²₀ (𝕗 , 𝕗) = (𝕗 , 𝕥)
 𝔹-compare-𝔹²₀ (𝕗 , 𝕥) = (𝕥 , 𝕗)
@@ -865,7 +867,7 @@ function `𝔹-compare-𝔹²₀`. We do this by consulting the definition of
 Next, we separate `𝔹-compare-𝔹²₀` into two functions and use the `▵`
 operator to combine the results again.
 
-```
+```agda
 𝔹-compare-𝔹²₁ : 𝔹² → 𝔹²
 𝔹-compare-𝔹²₁ = comp-fst ▵ comp-snd
   where
@@ -895,7 +897,7 @@ I will define the function using `𝔹̂` and the categorical arrow `_⇨_`
 since it now contains categorical primitives only.
 
 
-```
+```agda
 𝔹̂-compare-𝔹̂² : 𝔹̂² ⇨ 𝔹̂²
 𝔹̂-compare-𝔹̂² = (⟨∧⟩ ∘ first not) ▵ (not ∘ ⟨⊕⟩)
 ```
@@ -904,7 +906,7 @@ Just to be sure we check that its image under `Fₘ` is the same as the
 original comparison function we defined. In this particular case, `Fₘ`
 maps from the category of syntax to the category of functions.
 
-```
+```agda
 𝔹̂-compare-𝔹̂²≗𝔹-compare-𝔹² : Fₘ 𝔹̂-compare-𝔹̂² ≗ Comparison.compare 𝔹-Comparison-𝔹²
 𝔹̂-compare-𝔹̂²≗𝔹-compare-𝔹² =
   λ { (𝕗 , 𝕗) → refl
@@ -919,7 +921,7 @@ maps from the category of syntax to the category of functions.
 I will leave the details of how to compile down to `𝔹̂-compare-𝔹̂³` as
 an exercise for you, dear reader. The result is similar to that for `𝔹̂-compare-𝔹̂²`.
 
-```
+```agda
 𝔹̂-compare-𝔹̂³ : 𝔹̂² ⇨ 𝔹̂³
 𝔹̂-compare-𝔹̂³ = (⟨∧⟩ ∘ first not) ▵ (not ∘ ⟨⊕⟩) ▵ (∧ ∘ second not)
 
@@ -964,7 +966,7 @@ way of combining their associated meaning functions which we denote
 `μₘ` and `μₙ`.
 
 
-```
+```agda
 ⟨combine⟩ : ∀ {(m , n) : ℕ²} → 𝔽² (m , n) → 𝔽 (m * n)
 ⟨combine⟩ = uncurry combine
 
@@ -1001,14 +1003,14 @@ that the diagram above is commutative. We will use this later when
 proving that combined comparison functions are still refinements of
 `𝔽-compare`.
 
-```
+```agda
 is-⟨▲⟩-refinement : {ρ : Set} → (ρ → R) → (△ : ρ × ρ → ρ) → Set
 is-⟨▲⟩-refinement ν ⟨△⟩ = ⟨▲⟩ ∘ (ν ⊗ ν) ≗ ν ∘ ⟨△⟩
 ```
 
 -------------------------- scratch
 
-```
+```agda
 module ⟨△⟩-proofs {ρ : Set} where
 
   open import Algebra.Core
@@ -1067,7 +1069,7 @@ module ⟨△⟩-proofs {ρ : Set} where
 Now we can look at defining our combinator. For convenience we also
 define a type synonym `D`.
 
-```
+```agda
 D : Set → Set → Set
 D τ ρ = τ × τ → ρ
 
@@ -1082,7 +1084,7 @@ In categorical terms this can be defined as follows. We use the `■`
 symbol as an analogue of the `●` symbol whenever we are expressing
 definitions using a categorical representation.
 
-```
+```agda
 D̂ : Ty → Ty → Set
 D̂ τ ρ = τ × τ ⇨ ρ
 
@@ -1098,7 +1100,7 @@ By carefully looking at the definition of `⟨▲⟩` we can guess that the
 definition should be. A first attempt is:
 
 
-```
+```agda
 ⟨△-𝔹²⟩₀ : 𝔹² × 𝔹² → 𝔹²
 ⟨△-𝔹²⟩₀ ((𝕥 , b) , r₂) = (𝕥 , b)
 ⟨△-𝔹²⟩₀ ((𝕗 , 𝕗) , r₂) = (𝕗 , 𝕗)
@@ -1107,7 +1109,7 @@ definition should be. A first attempt is:
 
 However, closer scrutiny yields this more succinct definition
 
-```
+```agda
 ⟨△-𝔹²⟩ : 𝔹² × 𝔹² → 𝔹²
 ⟨△-𝔹²⟩ ((𝕗 , 𝕥) , r₂) = r₂
 ⟨△-𝔹²⟩ (r₁    ,  r₂) = r₁
@@ -1115,7 +1117,7 @@ However, closer scrutiny yields this more succinct definition
 
 This translates to a categorical representation as follows:
 
-```
+```agda
 ⟨△-𝔹̂²⟩ : 𝔹̂² × 𝔹̂² ⇨ 𝔹̂²
 ⟨△-𝔹̂²⟩ = cond ∘ ( (⟨∧⟩ ∘ (first not) ∘ exl) ▵ exl ▵ exr)
 
@@ -1131,7 +1133,7 @@ This translates to a categorical representation as follows:
 
 We can also show that it's a refinement of `⟨▲⟩`, and a monoid operator.
 
-```
+```agda
 ⟨△-𝔹̂²⟩-is-⟨▲⟩-refinement : is-⟨▲⟩-refinement 𝔹²-to-R (Fₘ ⟨△-𝔹̂²⟩)
 ⟨△-𝔹̂²⟩-is-⟨▲⟩-refinement =
   λ { ((𝕗 , 𝕗) , _) → refl
@@ -1145,7 +1147,7 @@ We can also show that it's a refinement of `⟨▲⟩`, and a monoid operator.
 A first attempt at the monoid operator is achieved by some simple
 equational reasoning on the definition of `⟨▲⟩`.
 
-```
+```agda
 ⟨△-𝔹³⟩₀ : 𝔹³ × 𝔹³ → 𝔹³
 ⟨△-𝔹³⟩₀ (v@(𝕥 , _ , _) , r₂) = v
 ⟨△-𝔹³⟩₀ (  (𝕗 , 𝕥 , _) , r₂) = r₂
@@ -1156,7 +1158,7 @@ equational reasoning on the definition of `⟨▲⟩`.
 However, it quickly becomes clear that the following definition is
 equivalent.
 
-```
+```agda
 ⟨△-𝔹³⟩ : 𝔹³ × 𝔹³ → 𝔹³
 ⟨△-𝔹³⟩ (  (𝕗 , 𝕥 , _) , r₂) = r₂
 ⟨△-𝔹³⟩ (  r₁         , r₂) = r₁
@@ -1164,7 +1166,7 @@ equivalent.
 
 The translation to a categorical representation is straightforward.
 
-```
+```agda
 ⟨△-𝔹̂³⟩ : 𝔹̂³ × 𝔹̂³ ⇨ 𝔹̂³
 ⟨△-𝔹̂³⟩ = cond ∘ ((⟨∧⟩ ∘ ((not ∘ e₁) ▵ e₂)) ▵ exl ▵ exr)
   where
@@ -1175,7 +1177,7 @@ The translation to a categorical representation is straightforward.
 
 And finally we prove it's a refinement of `⟨▲⟩` and a monoid-operator.
 
-```
+```agda
 ⟨△-𝔹̂³⟩-is-⟨▲⟩-refinement : is-⟨▲⟩-refinement 𝔹³-to-R (Fₘ ⟨△-𝔹̂³⟩)
 ⟨△-𝔹̂³⟩-is-⟨▲⟩-refinement =
   λ { ((𝕥 , _ , _) , _) → refl
@@ -1186,7 +1188,7 @@ And finally we prove it's a refinement of `⟨▲⟩` and a monoid-operator.
 ```
 
 
-```
+```agda
 -- 𝔹²-compare : 𝔹² × 𝔹² → 𝔹²
 -- 𝔹²-compare = 𝔹-compare-𝔹² ●̂ 𝔹-compare-𝔹²
 --   where
@@ -1196,7 +1198,7 @@ And finally we prove it's a refinement of `⟨▲⟩` and a monoid-operator.
 
 And now a 4-bit comparison.
 
-```
+```agda
 -- 𝔹⁴-compare : (𝔹² × 𝔹²) × (𝔹² × 𝔹²) → 𝔹²
 -- 𝔹⁴-compare = (𝔹-compare-𝔹² ●̂ 𝔹-compare-𝔹²) ●̂ (𝔹-compare-𝔹² ●̂ 𝔹-compare-𝔹²)
 --  where
@@ -1207,7 +1209,7 @@ And now a 4-bit comparison.
 
 ## The diagrams
 
-```
+```agda
 {-
 open import Ty
 open import Categorical.Free.Homomorphism Function renaming (_⇨_ to _↦_)
@@ -1246,7 +1248,7 @@ opᴮ̂ = cond ∘ ((exl ∘ exl) ▵ else ▵ exl)
 -}
 ```
 
-```
+```agda
 {-
 open import Level using (0ℓ)
 open import IO
@@ -1285,7 +1287,7 @@ boolean values in the triple is true while the rest are false.
 The function `hotness` returns the number of `𝕥` values in the triple
 and can range from 0 to 3.
 
-```
+```agda
 open import Data.Product using (Σ)
 
 hotness : 𝔹 × 𝔹 × 𝔹 → ℕ
@@ -1301,14 +1303,14 @@ depends on the _value_ of the first. For example if the _value_ of the
 first element is `(𝕥 , 𝕗 , 𝕗)` then the _type_ of the second element
 is `hotness (𝕥 , 𝕗 , 𝕗) ≡ 1`.
 
-```
+```agda
 Σ𝔹³ : Set
 Σ𝔹³ = Σ 𝔹³ (λ x → hotness x ≡ 1)
 ```
 
 We can then define the conversion functions to and from `Σ𝔹³`.
 
-```
+```agda
 Σ𝔹³-to-R : Σ𝔹³ → R
 Σ𝔹³-to-R ((𝕥 , 𝕗 , 𝕗) , refl) = is<
 Σ𝔹³-to-R ((𝕗 , 𝕥 , 𝕗) , refl) = is=
@@ -1323,7 +1325,7 @@ R-to-Σ𝔹³ is> = ( (𝕗 , 𝕗 , 𝕥) , refl)
 Pleasingly, using this representation, we can prove invertibility in
 both directions.
 
-```
+```agda
 Σ𝔹³-to-R∘R-to-Σ𝔹³ : Σ𝔹³-to-R ∘ R-to-Σ𝔹³ ≗ id
 Σ𝔹³-to-R∘R-to-Σ𝔹³ is<  = refl
 Σ𝔹³-to-R∘R-to-Σ𝔹³ is=  = refl
@@ -1347,6 +1349,8 @@ Compiling to Categories. This is an open problem at this point.
 
 
 -------------------------------------- begin scratch 2
+
+[TODO: Consider using Raw/Lawless representation for ⟨▲⟩ ]
 
 ```agda
 module homo-monoid-proof {ρ : Set} (ν : ρ → R) (⟨△⟩ : ρ × ρ → ρ) (e : ρ)
@@ -1413,13 +1417,12 @@ module homo-monoid-proof {ρ : Set} (ν : ρ → R) (⟨△⟩ : ρ × ρ → ρ
   △-isMonoid = record { isSemigroup = △-isSemigroup; identity = △-identity }
 
 
-
-_ : Set
-_ = {! ⟨△-𝔹̂³⟩-is-⟨▲⟩-refinement  !}
 ```
 
 And now to test
 
 ```
-open homo-monoid-proof 𝔹³-to-R (Fₘ ⟨△-𝔹̂³⟩) (𝕗 , 𝕥 , 𝕗) ⟨△-𝔹̂³⟩-is-⟨▲⟩-refinement
+-- open homo-monoid-proof 𝔹³-to-R (Fₘ ⟨△-𝔹̂³⟩) (𝕗 , 𝕥 , 𝕗) ⟨△-𝔹̂³⟩-is-⟨▲⟩-refinement
+open homo-monoid-proof 𝔹²-to-R (Fₘ ⟨△-𝔹̂²⟩) (𝕗 , 𝕥) ⟨△-𝔹̂²⟩-is-⟨▲⟩-refinement
+
 ```
