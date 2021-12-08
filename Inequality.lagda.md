@@ -5,8 +5,8 @@
 {-# OPTIONS --guardedness #-}  -- For tesing/IO
 module Inequality where
 
+open import Level using (0ℓ)
 open import Relation.Binary.Core using (Rel)
-open import Data.Bool renaming (Bool to 𝔹) hiding (_≤_;not;_∧_; true; false)
 open import Data.Bool.Properties
 open import Data.Nat hiding (_≤_ ; _≤ᵇ_;_≟_; compare; _⊔_)
 import Data.Nat as ℕ
@@ -18,7 +18,7 @@ import Data.Nat.Properties
 open import Relation.Binary.PropositionalEquality
 open import Categorical.Raw using (xor)
 open import Categorical.Homomorphism hiding (refl; sym)
-open import Functions
+open import Functions 0ℓ
 open import Categorical.Arrow Function renaming (mk to arr; _⇨_ to _⇛_) ; open _⇛_
 open import Relation.Nullary
 open import Relation.Nullary.Decidable
@@ -79,6 +79,9 @@ versions of these types (and natural numbers) allow us to succinctly
 denote products of these types.
 
 ```agda
+𝔹 : Set
+𝔹 = Bool
+
 ℕ² : Set
 ℕ² = ℕ × ℕ
 
