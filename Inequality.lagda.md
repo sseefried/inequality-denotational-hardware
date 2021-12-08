@@ -1426,3 +1426,7 @@ And now to test
 open homo-monoid-proof 𝔹²-to-R (Fₘ ⟨△-𝔹̂²⟩) (𝕗 , 𝕥) ⟨△-𝔹̂²⟩-is-⟨▲⟩-refinement
 
 ```
+
+
+
+-----

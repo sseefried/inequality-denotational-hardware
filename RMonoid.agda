@@ -59,7 +59,7 @@ ex3 = ⟨△⟩ ∘ (bigger ▵ smaller)
     bigger = ⟨△⟩ ∘ (⟨△⟩ ∘ (is<  ▵ is= ) ▵ ⟨△⟩ ∘ (is>  ▵ is< ))
     smaller = ⟨△⟩ ∘ (is<  ▵ is= )
 
-ex4 : ∀ {o : Level}  {obj : Set o}  {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ⊤ ⇨ R
+ex4 : expr
 ex4 {_} {_} {_⇨_} = step3
   where
     step1a step1b step1c step1d step2a step2b step3 : ⊤ ⇨ R
@@ -70,6 +70,9 @@ ex4 {_} {_} {_⇨_} = step3
     step2a = ⟨△⟩ ∘ (step1a  ▵ step1b )
     step2b = ⟨△⟩ ∘ (step1c  ▵ step1d )
     step3  = ⟨△⟩ ∘ (step2a  ▵ step2b )
+
+ex5 : expr
+ex5 = ⟨△⟩ ∘ (is< ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is> ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is> ▵ (⟨△⟩ ∘ (is< ▵ is<)))))))))))))
 
 _⇨ᶜ_ : Unit → Unit → Set
 tt ⇨ᶜ tt = ℕ
@@ -102,12 +105,13 @@ instance
   _ = record { is< = 0 ; is> = 0 ; is= = 0 ; ⟨△⟩ = 1 }
   -- Justification: Applying ⟨△⟩ costs one unit of work. Everything else is zero
 
-ex0′ ex1′ ex2′ ex3′ ex4′ : ℕ
+ex0′ ex1′ ex2′ ex3′ ex4′ ex5′ : ℕ
 ex0′ = ex0 -- cost = 0
 ex1′ = ex1 -- cost = 1
 ex2′ = ex2 -- cost = 2
 ex3′ = ex3 -- cost = 3
 ex4′ = ex4 -- cost = 3
+ex5′ = ex5 -- cost = 7
 
 _ : Set
-_ = {!ex3′!}
+_ = {!ex5′!}
