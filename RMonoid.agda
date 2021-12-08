@@ -6,7 +6,7 @@ open import Data.Nat hiding (_⊔_)
 open import Data.Nat.Properties
 open import Categorical.Raw
 open import Categorical.Equiv hiding (refl)
-open import Functions
+open import Functions hiding (tt ; if_then_else_)
 open import Data.Unit renaming (⊤ to Unit)
 import Categorical.Laws as Laws
 open import Relation.Binary.PropositionalEquality
