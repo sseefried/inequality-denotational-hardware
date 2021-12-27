@@ -4,6 +4,8 @@ import Level as L
 open import Data.Bool
 open import Data.Nat hiding (_⊔_)
 open import Data.Nat.Properties
+import Data.Nat as ℕ
+import Data.Nat.Properties as ℕ
 open import Categorical.Raw
 open import Categorical.Equiv hiding (refl)
 open import Functions hiding (tt ; if_then_else_)
@@ -18,8 +20,6 @@ open import Level using (Level; Lift; Setω; 0ℓ) renaming (suc to lsuc)
 private variable
   o : Level
   obj : Set o
-
-
 
 record RRep {o : Level} (obj : Set o) : Set (lsuc o) where
   field
@@ -134,10 +134,6 @@ module Attempt1 where
   d₀′ = d₀
   d₁′ = d₁
 
-  _ : Set
-  _ = {!d₁′!}
-
-
 module Attempt2 where
   open import Data.Vec
   import Data.Vec as V
@@ -145,6 +141,7 @@ module Attempt2 where
   import Data.Integer as ℤ
   import Data.Sign as S
   open Data.Product renaming  (_×_ to _×′)
+  open import Function
 
 
   -- TODO: model negative infinity
@@ -152,58 +149,78 @@ module Attempt2 where
     int : ℤ.ℤ → ℤ∞
     -∞  : ℤ∞ -}
 
-  _ : Set
-  _ = {! (S.+ ◃ 1) ⊔ (S.- ◃ 2) !}
-
   Matrix : Set → ℕ → ℕ → Set
   Matrix A m n =  Vec (Vec A n) m
 
-  _∙_ : {n : ℕ} → Vec ℤ (ℕ.suc n) → Vec ℤ (ℕ.suc n) → ℤ
-  v₁ ∙ v₂ = foldl₁ _⊔_ (zipWith ℤ._+_ v₁ v₂)
+  -∞ : ℤ
+  -∞ = (S.- ◃ 100000000) -- such a hack
+
+  _∙_ : {n : ℕ} → Vec ℤ n → Vec ℤ n → ℤ
+  _∙_ {n} v₁ v₂ = foldl (const ℤ) _⊔_ -∞ (zipWith ℤ._+_ v₁ v₂)
 
   -- objects are ℤ
-  -- morphism is matrices
+  -- morphisms are matrices
   -- composition is matrix multiplication
 
   cross : ∀ {A} {m n : ℕ} → Vec A m → Vec A n → Matrix (A ×′ A) m n
   cross {m = zero} _ _ = []
-  cross {m = suc m} (v₁ ∷ v₁s) v₂s =  (V.map (λ v₂ → (v₁ , v₂)) v₂s) ∷ cross v₁s v₂s
+  cross {m = suc m} (x₁ ∷ x₁s) x₂s =  (V.map (λ x₂ → (x₁ , x₂)) x₂s) ∷ cross x₁s x₂s
 
-   -- Vec (A ×′ A) n
+  identityMatrix : {n : ℕ} → Matrix ℤ n n
+  identityMatrix = V.map 1-in-pos (foo 0)
+    where
+      1-in-pos : {n : ℕ} → ℕ → Vec ℤ n
+      1-in-pos {zero} _ = []
+      1-in-pos {suc n} m with m ℕ.≟ n
+      ... | yes refl = (S.+ ◃ 1) ∷ 1-in-pos m
+      ... | no _     = 0ℤ ∷ 1-in-pos m
 
-{-
-   is= : ⊤ ⇨ R -- one input, one output
-   [ -∞ ]
+      foo : {n : ℕ} → ℕ → Vec ℕ n
+      foo {zero} _ = []
+      foo {suc n} x = x ∷ foo {n} (ℕ.suc x)
 
-   ⟨△⟩ : R × R → R -- two inputs, one output
-   [1 1]
+  _∗_ : {m n p : ℕ} → Matrix ℤ m n → Matrix ℤ n p → Matrix ℤ m p
+  [] ∗ _ = []
+  _∗_ {suc m} (v₁ ∷ m₁) m₂ = V.map (λ v₂ → v₁ ∙ v₂) (V.transpose m₂) ∷ m₁ ∗ m₂
 
-   is= ▵ is< -- one inputs, two outputs
-   [ -∞ -∞ ]
+  _⇨_ : ℕ → ℕ → Set
+  m ⇨ n = Matrix ℤ m n
 
-   _▵_ : m x n → m x p → m x (n + p)
+  vert : {m n : ℕ} → Matrix ℤ n n → Matrix ℤ m n → Matrix ℤ (n ℕ.+ m) n
+  vert m₁ m₂ = m₁ V.++ m₂
 
-   e.g. (is= ▵ is<) ▵ (is> ▵ is=) = [ -∞ -∞ -∞ -∞ ]
+  zeroMatrix : {m n : ℕ} → Matrix ℤ m n
+  zeroMatrix = replicate (replicate 0ℤ)
 
-   ! = m x 1
+  [[-∞]] : 1 ⇨ 1
+  [[-∞]] = (-∞ ∷ []) ∷ []
 
+  instance
+    _ : Category {obj = ℕ} _⇨_
+    _ = record { id = identityMatrix ; _∘_ = flip _∗_ }
 
+    _ : Products ℕ
+    _ = record { ⊤ = 1 ; _×_ = ℕ._+_ }
 
-   exl = [ 1
-           0 ]
-   exr = [ 0
-           1 ]
+    _ : Cartesian {obj = ℕ} _⇨_
+    _ = record { !   = replicate (-∞ ∷ [])
+               ; _▵_ = zipWith V._++_
+               ; exl = identityMatrix V.++ zeroMatrix
+               ; exr = zeroMatrix V.++ identityMatrix
+               }
+    _ : RRep ℕ
+    _ = record { R = 1 }
 
-   e.g. exl ∘ is= ▵ is< = [ 1 ]
-                          [ 0 ] · [ ­∞ -∞ ] = [ -∞ ]
+    _ : RMonoid _⇨_
+    _ = record { is< = [[-∞]]
+               ; is> = [[-∞]]
+               ; is= = [[-∞]]
+               ; ⟨△⟩ = (1ℤ ∷ []) ∷ (1ℤ ∷ []) ∷ []
+               }
 
+  d₀′ d₁′ : 1 ⇨ 2
+  d₀′ = d₀
+  d₁′ = d₁
 
-
--}
-
-
---  _·_ : {m n : ℕ} → Matrix ℤ m n → Matrix ℤ m n → Matrix ℤ m n
---  m₁ · m₂ = zipWith _∙_ (V.transpose m₂)
-
---  _⇨ᶜ_ : Matrix ℤ → Matrix ℤ → Matrix ℤ
---  _⇨ᶜ_ =
+  _ : Set
+  _ = {! d₀′!}
