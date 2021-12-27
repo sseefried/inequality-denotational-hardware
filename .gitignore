@@ -10,3 +10,6 @@ Inequality
 Figures/*.dot
 Figures/*.ssa
 Figures/*.pdf
+Scratch.agda
+EndoFunctionsAsAMonoid.agda
+LogicTest.agda
