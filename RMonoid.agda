@@ -167,8 +167,9 @@ module Attempt2 where
 
   cross : ∀ {A} {m n : ℕ} → Vec A m → Vec A n → Matrix (A ×′ A) m n
   cross {m = zero} _ _ = []
-  cross (m = suc m} v₁ v₂ =
+  cross {m = suc m} (v₁ ∷ v₁s) v₂s =  (V.map (λ v₂ → (v₁ , v₂)) v₂s) ∷ cross v₁s v₂s
 
+   -- Vec (A ×′ A) n
 
 {-
    is= : ⊤ ⇨ R -- one input, one output
