@@ -153,10 +153,10 @@ module Attempt2 where
   Matrix A m n =  Vec (Vec A n) m
 
   -∞ : ℤ
-  -∞ = (S.- ◃ 100000000) -- such a hack
+  -∞ = (S.- ◃ 1000) -- such a hack
 
   _∙_ : {n : ℕ} → Vec ℤ n → Vec ℤ n → ℤ
-  _∙_ {n} v₁ v₂ = foldl (const ℤ) _⊔_ -∞ (zipWith ℤ._+_ v₁ v₂)
+  _∙_ {n} v₁ v₂ = foldl _ _⊔_ -∞ (zipWith ℤ._+_ v₁ v₂)
 
   -- objects are ℤ
   -- morphisms are matrices
@@ -167,17 +167,17 @@ module Attempt2 where
   cross {m = suc m} (x₁ ∷ x₁s) x₂s =  (V.map (λ x₂ → (x₁ , x₂)) x₂s) ∷ cross x₁s x₂s
 
   identityMatrix : {n : ℕ} → Matrix ℤ n n
-  identityMatrix = V.map 1-in-pos (foo 0)
+  identityMatrix = V.map 1-in-pos indices
     where
       1-in-pos : {n : ℕ} → ℕ → Vec ℤ n
       1-in-pos {zero} _ = []
       1-in-pos {suc n} m with m ℕ.≟ n
-      ... | yes refl = (S.+ ◃ 1) ∷ 1-in-pos m
+      ... | yes refl = 1ℤ ∷ 1-in-pos m
       ... | no _     = 0ℤ ∷ 1-in-pos m
 
-      foo : {n : ℕ} → ℕ → Vec ℕ n
-      foo {zero} _ = []
-      foo {suc n} x = x ∷ foo {n} (ℕ.suc x)
+      indices : {n : ℕ} → Vec ℕ n
+      indices {zero}  = []
+      indices {suc n} = n ∷ indices {n}
 
   _∗_ : {m n p : ℕ} → Matrix ℤ m n → Matrix ℤ n p → Matrix ℤ m p
   [] ∗ _ = []
@@ -192,8 +192,8 @@ module Attempt2 where
   zeroMatrix : {m n : ℕ} → Matrix ℤ m n
   zeroMatrix = replicate (replicate 0ℤ)
 
-  [[-∞]] : 1 ⇨ 1
-  [[-∞]] = (-∞ ∷ []) ∷ []
+  [[0]] : 1 ⇨ 1
+  [[0]] = (0ℤ ∷ []) ∷ []
 
   instance
     _ : Category {obj = ℕ} _⇨_
@@ -212,15 +212,18 @@ module Attempt2 where
     _ = record { R = 1 }
 
     _ : RMonoid _⇨_
-    _ = record { is< = [[-∞]]
-               ; is> = [[-∞]]
-               ; is= = [[-∞]]
+    _ = record { is< = [[0]]
+               ; is> = [[0]]
+               ; is= = [[0]]
                ; ⟨△⟩ = (1ℤ ∷ []) ∷ (1ℤ ∷ []) ∷ []
                }
+
+  ex1′ : 1 ⇨ 1
+  ex1′ = ex1
 
   d₀′ d₁′ : 1 ⇨ 2
   d₀′ = d₀
   d₁′ = d₁
 
   _ : Set
-  _ = {! d₀′!}
+  _ = {! ex1′!}
