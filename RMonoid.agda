@@ -79,11 +79,13 @@ ex5 : expr
 ex5 = ⟨△⟩ ∘ (is< ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is> ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is> ▵ (⟨△⟩ ∘ (is< ▵ is<)))))))))))))
 
 
+expr2 : Setω
+expr2 = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ⊤ ⇨ (R × R)
 
-d₀ : ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ⊤ ⇨ (R × R)
+d₀ : expr2
 d₀ = ((⟨△⟩ ⊗ id) ∘ (id ⊗ ⟨△⟩)) ∘ ((is< ▵ is=) ▵ (is> ▵ is<))
 
-d₁ : ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ⊤ ⇨ (R × R)
+d₁ : expr2
 d₁ = ((⟨△⟩ ∘ id) ⊗ (id ∘ ⟨△⟩)) ∘ ((is< ▵ is=) ▵ (is> ▵ is<))
 
 _⇨ᶜ_ : Unit → Unit → Set
@@ -141,7 +143,7 @@ module Attempt2 where
   import Data.Integer as ℤ
   import Data.Sign as S
   open Data.Product renaming  (_×_ to _×′)
-  open import Function
+  open import Function hiding (id)
 
 
   -- TODO: model negative infinity
@@ -152,11 +154,11 @@ module Attempt2 where
   Matrix : Set → ℕ → ℕ → Set
   Matrix A m n =  Vec (Vec A n) m
 
-  -∞ : ℤ
-  -∞ = (S.- ◃ 1000) -- such a hack
+--  -∞ : ℤ
+--  -∞ = (S.- ◃ 1000) -- such a hack
 
   _∙_ : {n : ℕ} → Vec ℤ n → Vec ℤ n → ℤ
-  _∙_ {n} v₁ v₂ = foldl _ _⊔_ -∞ (zipWith ℤ._+_ v₁ v₂)
+  _∙_ {n} v₁ v₂ = foldl _ _⊔_ 0ℤ (zipWith ℤ._+_ v₁ v₂)
 
   -- objects are ℤ
   -- morphisms are matrices
@@ -186,15 +188,11 @@ module Attempt2 where
   _⇨_ : ℕ → ℕ → Set
   m ⇨ n = Matrix ℤ m n
 
-  vert : {m n : ℕ} → Matrix ℤ n n → Matrix ℤ m n → Matrix ℤ (n ℕ.+ m) n
-  vert m₁ m₂ = m₁ V.++ m₂
-
   zeroMatrix : {m n : ℕ} → Matrix ℤ m n
   zeroMatrix = replicate (replicate 0ℤ)
 
   [[0]] : 1 ⇨ 1
-  [[0]] = (0ℤ ∷ []) ∷ []
-
+  [[0]] = zeroMatrix
   instance
     _ : Category {obj = ℕ} _⇨_
     _ = record { id = identityMatrix ; _∘_ = flip _∗_ }
@@ -203,7 +201,7 @@ module Attempt2 where
     _ = record { ⊤ = 1 ; _×_ = ℕ._+_ }
 
     _ : Cartesian {obj = ℕ} _⇨_
-    _ = record { !   = replicate (-∞ ∷ [])
+    _ = record { !   = replicate (0ℤ ∷ [])
                ; _▵_ = zipWith V._++_
                ; exl = identityMatrix V.++ zeroMatrix
                ; exr = zeroMatrix V.++ identityMatrix
@@ -225,5 +223,33 @@ module Attempt2 where
   d₀′ = d₀
   d₁′ = d₁
 
+  b1 : 2 ⇨ 3
+  b1 = {! id ⊗ ⟨△⟩  !}
+
   _ : Set
-  _ = {! ex1′!}
+  _ = {! d₀′!}
+
+
+{-
+  ⊗ : a ⇨ c → b ⇨ d → (a + b) ⇨ (c + d)
+
+
+((is< ▵ is=) ▵ (is> ▵ is<) : 1 ⇨ 4
+
+((⟨△⟩ ⊗ id) ∘ (id ⊗ ⟨△⟩)) : 4 ⇨ 2
+
+ ([1 1] ⊗ id) ∘ (id ⊗ [1 1])
+    2 ⇨ 4      ∘ 2 ⇨ 3
+
+                 [1] ⊗ [1,1]
+
+
+
+
+
+
+
+
+(⟨△⟩ ∘ id) ⊗ (id ∘ ⟨△⟩) : 4 ⇨ 2
+
+-}
