@@ -136,6 +136,9 @@ module Attempt1 where
   d₀′ = d₀
   d₁′ = d₁
 
+  _ : Set
+  _ = {! d₀′ !}
+
 module Attempt2 where
   open import Data.Vec
   import Data.Vec as V
@@ -154,11 +157,17 @@ module Attempt2 where
   Matrix : Set → ℕ → ℕ → Set
   Matrix A m n =  Vec (Vec A n) m
 
---  -∞ : ℤ
---  -∞ = (S.- ◃ 1000) -- such a hack
+  -∞ : ℤ
+  -∞ = (S.- ◃ 1000) -- such a hack
+
+  #1 : ℤ
+  #1 = 0ℤ
+
+  #0 : ℤ
+  #0 = -∞
 
   _∙_ : {n : ℕ} → Vec ℤ n → Vec ℤ n → ℤ
-  _∙_ {n} v₁ v₂ = foldl _ _⊔_ 0ℤ (zipWith ℤ._+_ v₁ v₂)
+  _∙_ {n} v₁ v₂ = foldl _ _⊔_ #0 (zipWith ℤ._+_ v₁ v₂)
 
   -- objects are ℤ
   -- morphisms are matrices
@@ -174,8 +183,8 @@ module Attempt2 where
       1-in-pos : {n : ℕ} → ℕ → Vec ℤ n
       1-in-pos {zero} _ = []
       1-in-pos {suc n} m with m ℕ.≟ n
-      ... | yes refl = 1ℤ ∷ 1-in-pos m
-      ... | no _     = 0ℤ ∷ 1-in-pos m
+      ... | yes refl = #1 ∷ 1-in-pos m
+      ... | no _     = #0 ∷ 1-in-pos m
 
       indices : {n : ℕ} → Vec ℕ n
       indices {zero}  = []
@@ -189,10 +198,14 @@ module Attempt2 where
   m ⇨ n = Matrix ℤ m n
 
   zeroMatrix : {m n : ℕ} → Matrix ℤ m n
-  zeroMatrix = replicate (replicate 0ℤ)
+  zeroMatrix = replicate (replicate #0)
 
   [[0]] : 1 ⇨ 1
   [[0]] = zeroMatrix
+
+  [[1]] : 1 ⇨ 1
+  [[1]] = identityMatrix
+
   instance
     _ : Category {obj = ℕ} _⇨_
     _ = record { id = identityMatrix ; _∘_ = flip _∗_ }
@@ -201,7 +214,7 @@ module Attempt2 where
     _ = record { ⊤ = 1 ; _×_ = ℕ._+_ }
 
     _ : Cartesian {obj = ℕ} _⇨_
-    _ = record { !   = replicate (0ℤ ∷ [])
+    _ = record { !   = replicate (#0 ∷ [])
                ; _▵_ = zipWith V._++_
                ; exl = identityMatrix V.++ zeroMatrix
                ; exr = zeroMatrix V.++ identityMatrix
@@ -210,24 +223,29 @@ module Attempt2 where
     _ = record { R = 1 }
 
     _ : RMonoid _⇨_
-    _ = record { is< = [[0]]
-               ; is> = [[0]]
-               ; is= = [[0]]
+    _ = record { is< = [[1]]
+               ; is> = [[1]]
+               ; is= = [[1]]
                ; ⟨△⟩ = (1ℤ ∷ []) ∷ (1ℤ ∷ []) ∷ []
                }
 
-  ex1′ : 1 ⇨ 1
+  ex0′ ex1′ ex2′ ex3′ ex4′ ex5′    : 1 ⇨ 1
+  ex0′ = ex0
   ex1′ = ex1
+  ex2′ = ex2
+  ex3′ = ex3
+  ex4′ = ex4
+  ex5′ = ex5
 
   d₀′ d₁′ : 1 ⇨ 2
   d₀′ = d₀
   d₁′ = d₁
 
-  b1 : 2 ⇨ 3
-  b1 = {! id ⊗ ⟨△⟩  !}
+  b1 : 1 ⇨ 1
+  b1 = {! identityMatrix {2}  !}
 
   _ : Set
-  _ = {! d₀′!}
+  _ = {! ex1′!}
 
 
 {-
