@@ -79,6 +79,29 @@ ex5 : expr
 ex5 = ⟨△⟩ ∘ (is< ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is> ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is> ▵ (⟨△⟩ ∘ (is< ▵ is<)))))))))))))
 
 
+ex6 : ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → (((R × R) × (R × R)) × ((R × R) × (R × R))) ⇨ R
+ex6 {_} {_} {_⇨_} = step3
+  where
+    x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ : (((R × R) × (R × R)) × ((R × R) × (R × R))) ⇨ R
+    x₀ = exl ∘ exl ∘ exl
+    x₁ = exr ∘ exl ∘ exl
+    x₂ = exl ∘ exr ∘ exl
+    x₃ = exr ∘ exr ∘ exl
+    x₄ = exl ∘ exl ∘ exr
+    x₅ = exr ∘ exl ∘ exr
+    x₆ = exl ∘ exr ∘ exr
+    x₇ = exr ∘ exr ∘ exr
+
+    step1a step1b step1c step1d step2a step2b step3 : (((R × R) × (R × R)) × ((R × R) × (R × R))) ⇨ R
+    step1a = ⟨△⟩ ∘ (x₀  ▵ x₁ )
+    step1b = ⟨△⟩ ∘ (x₂  ▵ x₃ )
+    step1c = ⟨△⟩ ∘ (x₄  ▵ x₅ )
+    step1d = ⟨△⟩ ∘ (x₆  ▵ x₇ )
+    step2a = ⟨△⟩ ∘ (step1a  ▵ step1b )
+    step2b = ⟨△⟩ ∘ (step1c  ▵ step1d )
+    step3  = ⟨△⟩ ∘ (step2a  ▵ step2b )
+
+
 expr2 : Setω
 expr2 = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ⊤ ⇨ (R × R)
 
@@ -137,7 +160,7 @@ module Attempt1 where
   d₁′ = d₁
 
   _ : Set
-  _ = {! d₀′ !}
+  _ = {! d₁′ !}
 
 module Attempt2 where
   open import Data.Vec
@@ -147,12 +170,6 @@ module Attempt2 where
   import Data.Sign as S
   open Data.Product renaming  (_×_ to _×′)
   open import Function hiding (id)
-
-
-  -- TODO: model negative infinity
-  {-  data ℤ∞ : Set where
-    int : ℤ.ℤ → ℤ∞
-    -∞  : ℤ∞ -}
 
   Matrix : Set → ℕ → ℕ → Set
   Matrix A m n =  Vec (Vec A n) m
@@ -212,11 +229,11 @@ module Attempt2 where
   zeroMatrix : {m n : ℕ} → Matrix ℤ∞ m n
   zeroMatrix = replicate (replicate #0)
 
-  [[0]] : 1 ⇨ 1
-  [[0]] = zeroMatrix
+  [[-∞]] : 1 ⇨ 1
+  [[-∞]] = zeroMatrix
 
-  [[1]] : 1 ⇨ 1
-  [[1]] = identityMatrix
+  [[0]] : 1 ⇨ 1
+  [[0]] = identityMatrix
 
   instance
     _ : Category {obj = ℕ} _⇨_
@@ -235,13 +252,13 @@ module Attempt2 where
     _ = record { R = 1 }
 
     _ : RMonoid _⇨_
-    _ = record { is< = [[1]]
-               ; is> = [[1]]
-               ; is= = [[1]]
+    _ = record { is< = [[-∞]]
+               ; is> = [[-∞]]
+               ; is= = [[-∞]]
                ; ⟨△⟩ = (finℤ 1ℤ ∷ []) ∷ (finℤ 1ℤ ∷ []) ∷ []
                }
 
-  ex0′ ex1′ ex2′ ex3′ ex4′ ex5′    : 1 ⇨ 1
+  ex0′ ex1′ ex2′ ex3′ ex4′ ex5′  : 1 ⇨ 1
   ex0′ = ex0
   ex1′ = ex1
   ex2′ = ex2
@@ -249,9 +266,12 @@ module Attempt2 where
   ex4′ = ex4
   ex5′ = ex5
 
+  ex6′ : 8 ⇨ 1
+  ex6′ = ex6
+
   d₀′ d₁′ : 1 ⇨ 2
   d₀′ = d₀
   d₁′ = d₁
 
   _ : Set
-  _ = {! ex5′!}
+  _ = {! ex6′!}
