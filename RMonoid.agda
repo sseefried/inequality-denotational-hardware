@@ -2,7 +2,7 @@ module RMonoid where
 
 import Level as L
 open import Data.Bool
-open import Data.Nat hiding (_⊔_)
+open import Data.Nat hiding (_⊔_;_+_)
 open import Data.Nat.Properties
 import Data.Nat as ℕ
 import Data.Nat.Properties as ℕ
@@ -98,14 +98,14 @@ module Attempt1 where
 
   instance
     _ : Category  _⇨ᶜ_
-    _ = record { id = 0 ; _∘_ = _+_ } -- "a monoid is a category with one object"
+    _ = record { id = 0 ; _∘_ = ℕ._+_ } -- "a monoid is a category with one object"
     -- justification : add costs when you compose operations
 
     _ : Equivalent 0ℓ _⇨ᶜ_
     _ = record { _≈_ = _≡_ ; equiv = isEquivalence }
 
     _ : Laws.Category  _⇨ᶜ_
-    _ = record { identityˡ = refl ; identityʳ = λ {_ _ f} → +-identityʳ f ; assoc = λ {_ _ _ _ f g h}  → +-assoc h g f   ; ∘≈ = cong₂ _+_ }
+    _ = record { identityˡ = refl ; identityʳ = λ {_ _ f} → +-identityʳ f ; assoc = λ {_ _ _ _ f g h}  → +-assoc h g f   ; ∘≈ = cong₂ ℕ._+_ }
 
     _ : Products Unit
     _ = record { ⊤ = tt ; _×_ = λ _ _ → tt }
@@ -142,7 +142,7 @@ module Attempt1 where
 module Attempt2 where
   open import Data.Vec
   import Data.Vec as V
-  open import Data.Integer
+  open import Data.Integer hiding (_+_)
   import Data.Integer as ℤ
   import Data.Sign as S
   open Data.Product renaming  (_×_ to _×′)
@@ -157,17 +157,29 @@ module Attempt2 where
   Matrix : Set → ℕ → ℕ → Set
   Matrix A m n =  Vec (Vec A n) m
 
-  -∞ : ℤ
-  -∞ = (S.- ◃ 1000) -- such a hack
 
-  #1 : ℤ
-  #1 = 0ℤ
+  data ℤ∞ : Set where
+    -∞   : ℤ∞
+    finℤ : ℤ → ℤ∞
 
-  #0 : ℤ
+  #1 : ℤ∞
+  #1 = finℤ 0ℤ
+
+  #0 : ℤ∞
   #0 = -∞
 
-  _∙_ : {n : ℕ} → Vec ℤ n → Vec ℤ n → ℤ
-  _∙_ {n} v₁ v₂ = foldl _ _⊔_ #0 (zipWith ℤ._+_ v₁ v₂)
+  _+_ : ℤ∞ → ℤ∞ → ℤ∞
+  -∞ + _  = -∞
+  _  + -∞ = -∞
+  (finℤ m) + (finℤ n) = finℤ (m ℤ.+ n)
+
+  ℤ∞-max : ℤ∞ → ℤ∞ → ℤ∞
+  ℤ∞-max -∞ b = b
+  ℤ∞-max a -∞ = a
+  ℤ∞-max (finℤ m) (finℤ n) = finℤ (m ℤ.⊔ n)
+
+  _∙_ : {n : ℕ} → Vec ℤ∞ n → Vec ℤ∞ n → ℤ∞
+  _∙_ {n} v₁ v₂ = foldl _ ℤ∞-max #0 (zipWith _+_ v₁ v₂)
 
   -- objects are ℤ
   -- morphisms are matrices
@@ -177,10 +189,10 @@ module Attempt2 where
   cross {m = zero} _ _ = []
   cross {m = suc m} (x₁ ∷ x₁s) x₂s =  (V.map (λ x₂ → (x₁ , x₂)) x₂s) ∷ cross x₁s x₂s
 
-  identityMatrix : {n : ℕ} → Matrix ℤ n n
+  identityMatrix : {n : ℕ} → Matrix ℤ∞ n n
   identityMatrix = V.map 1-in-pos indices
     where
-      1-in-pos : {n : ℕ} → ℕ → Vec ℤ n
+      1-in-pos : {n : ℕ} → ℕ → Vec ℤ∞ n
       1-in-pos {zero} _ = []
       1-in-pos {suc n} m with m ℕ.≟ n
       ... | yes refl = #1 ∷ 1-in-pos m
@@ -190,14 +202,14 @@ module Attempt2 where
       indices {zero}  = []
       indices {suc n} = n ∷ indices {n}
 
-  _∗_ : {m n p : ℕ} → Matrix ℤ m n → Matrix ℤ n p → Matrix ℤ m p
+  _∗_ : {m n p : ℕ} → Matrix ℤ∞ m n → Matrix ℤ∞ n p → Matrix ℤ∞ m p
   [] ∗ _ = []
   _∗_ {suc m} (v₁ ∷ m₁) m₂ = V.map (λ v₂ → v₁ ∙ v₂) (V.transpose m₂) ∷ m₁ ∗ m₂
 
   _⇨_ : ℕ → ℕ → Set
-  m ⇨ n = Matrix ℤ m n
+  m ⇨ n = Matrix ℤ∞ m n
 
-  zeroMatrix : {m n : ℕ} → Matrix ℤ m n
+  zeroMatrix : {m n : ℕ} → Matrix ℤ∞ m n
   zeroMatrix = replicate (replicate #0)
 
   [[0]] : 1 ⇨ 1
@@ -226,7 +238,7 @@ module Attempt2 where
     _ = record { is< = [[1]]
                ; is> = [[1]]
                ; is= = [[1]]
-               ; ⟨△⟩ = (1ℤ ∷ []) ∷ (1ℤ ∷ []) ∷ []
+               ; ⟨△⟩ = (finℤ 1ℤ ∷ []) ∷ (finℤ 1ℤ ∷ []) ∷ []
                }
 
   ex0′ ex1′ ex2′ ex3′ ex4′ ex5′    : 1 ⇨ 1
@@ -241,33 +253,5 @@ module Attempt2 where
   d₀′ = d₀
   d₁′ = d₁
 
-  b1 : 1 ⇨ 1
-  b1 = {! identityMatrix {2}  !}
-
   _ : Set
-  _ = {! ex1′!}
-
-
-{-
-  ⊗ : a ⇨ c → b ⇨ d → (a + b) ⇨ (c + d)
-
-
-((is< ▵ is=) ▵ (is> ▵ is<) : 1 ⇨ 4
-
-((⟨△⟩ ⊗ id) ∘ (id ⊗ ⟨△⟩)) : 4 ⇨ 2
-
- ([1 1] ⊗ id) ∘ (id ⊗ [1 1])
-    2 ⇨ 4      ∘ 2 ⇨ 3
-
-                 [1] ⊗ [1,1]
-
-
-
-
-
-
-
-
-(⟨△⟩ ∘ id) ⊗ (id ∘ ⟨△⟩) : 4 ⇨ 2
-
--}
+  _ = {! ex5′!}
