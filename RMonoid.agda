@@ -79,7 +79,7 @@ ex5 : expr
 ex5 = ⟨△⟩ ∘ (is< ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is> ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is> ▵ (⟨△⟩ ∘ (is< ▵ is<)))))))))))))
 
 
-ex6 : ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → (((R × R) × (R × R)) × ((R × R) × (R × R))) ⇨ R
+ex6 ex7 : ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → (((R × R) × (R × R)) × ((R × R) × (R × R))) ⇨ R
 ex6 {_} {_} {_⇨_} = step3
   where
     x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ : (((R × R) × (R × R)) × ((R × R) × (R × R))) ⇨ R
@@ -101,6 +101,17 @@ ex6 {_} {_} {_⇨_} = step3
     step2b = ⟨△⟩ ∘ (step1c  ▵ step1d )
     step3  = ⟨△⟩ ∘ (step2a  ▵ step2b )
 
+ex7 {_} {_} {_⇨_} = ⟨△⟩ ∘ (x₀ ▵ (⟨△⟩ ∘ (x₁ ▵ (⟨△⟩ ∘ (x₂ ▵ (⟨△⟩ ∘ (x₃ ▵ (⟨△⟩ ∘ (x₄ ▵ (⟨△⟩ ∘ (x₅ ▵ (⟨△⟩ ∘ (x₆ ▵ x₇)))))))))))))
+  where
+    x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ : (((R × R) × (R × R)) × ((R × R) × (R × R))) ⇨ R
+    x₀ = exl ∘ exl ∘ exl
+    x₁ = exr ∘ exl ∘ exl
+    x₂ = exl ∘ exr ∘ exl
+    x₃ = exr ∘ exr ∘ exl
+    x₄ = exl ∘ exl ∘ exr
+    x₅ = exr ∘ exl ∘ exr
+    x₆ = exl ∘ exr ∘ exr
+    x₇ = exr ∘ exr ∘ exr
 
 expr2 : Setω
 expr2 = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ⊤ ⇨ (R × R)
@@ -266,8 +277,11 @@ module Attempt2 where
   ex4′ = ex4
   ex5′ = ex5
 
-  ex6′ : 8 ⇨ 1
+  ex6′ ex7′ : 8 ⇨ 1
   ex6′ = ex6
+  ex7′ = ex7
+
+
 
   d₀′ d₁′ : 1 ⇨ 2
   d₀′ = d₀
