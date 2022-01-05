@@ -114,13 +114,13 @@ ex7 {_} {_} {_⇨_} = ⟨△⟩ ∘ (x₀ ▵ (⟨△⟩ ∘ (x₁ ▵ (⟨△�
     x₇ = exr ∘ exr ∘ exr
 
 expr2 : Setω
-expr2 = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ⊤ ⇨ (R × R)
+expr2 = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ((R × R) × (R × R)) ⇨ (R × R)
 
 d₀ : expr2
-d₀ = ((⟨△⟩ ⊗ id) ∘ (id ⊗ ⟨△⟩)) ∘ ((is< ▵ is=) ▵ (is> ▵ is<))
+d₀ = ((⟨△⟩ ⊗ id) ∘ (id ⊗ ⟨△⟩))
 
 d₁ : expr2
-d₁ = ((⟨△⟩ ∘ id) ⊗ (id ∘ ⟨△⟩)) ∘ ((is< ▵ is=) ▵ (is> ▵ is<))
+d₁ = ((⟨△⟩ ∘ id) ⊗ (id ∘ ⟨△⟩))
 
 _⇨ᶜ_ : Unit → Unit → Set
 tt ⇨ᶜ tt = ℕ
@@ -235,7 +235,7 @@ module Attempt2 where
   _∗_ {suc m} (v₁ ∷ m₁) m₂ = V.map (λ v₂ → v₁ ∙ v₂) (V.transpose m₂) ∷ m₁ ∗ m₂
 
   _⇨_ : ℕ → ℕ → Set
-  m ⇨ n = Matrix ℤ∞ m n
+  c ⇨ r = Matrix ℤ∞ r c
 
   zeroMatrix : {m n : ℕ} → Matrix ℤ∞ m n
   zeroMatrix = replicate (replicate #0)
@@ -246,18 +246,24 @@ module Attempt2 where
   [[0]] : 1 ⇨ 1
   [[0]] = identityMatrix
 
+  -- [A | B]
+  joinMatrix : {m n p : ℕ} → Matrix ℤ∞ m n → Matrix ℤ∞ m p → Matrix ℤ∞ m (n ℕ.+ p)
+  joinMatrix = zipWith V._++_
+
   instance
     _ : Category {obj = ℕ} _⇨_
-    _ = record { id = identityMatrix ; _∘_ = flip _∗_ }
+    _ = record { id = identityMatrix ; _∘_ = _∗_ }
 
     _ : Products ℕ
     _ = record { ⊤ = 1 ; _×_ = ℕ._+_ }
 
     _ : Cartesian {obj = ℕ} _⇨_
-    _ = record { !   = replicate (#0 ∷ [])
-               ; _▵_ = zipWith V._++_
-               ; exl = identityMatrix V.++ zeroMatrix
-               ; exr = zeroMatrix V.++ identityMatrix
+    _ = record { !   = replicate #0 ∷ []
+               ; _▵_ = V._++_ -- [A]
+                              -- [-]
+                              -- [B]
+               ; exl = joinMatrix identityMatrix zeroMatrix
+               ; exr = joinMatrix zeroMatrix identityMatrix
                }
     _ : RRep ℕ
     _ = record { R = 1 }
@@ -266,7 +272,7 @@ module Attempt2 where
     _ = record { is< = [[-∞]]
                ; is> = [[-∞]]
                ; is= = [[-∞]]
-               ; ⟨△⟩ = (finℤ 1ℤ ∷ []) ∷ (finℤ 1ℤ ∷ []) ∷ []
+               ; ⟨△⟩ = (finℤ 1ℤ ∷ finℤ 1ℤ ∷ []) ∷ []
                }
 
   ex0′ ex1′ ex2′ ex3′ ex4′ ex5′  : 1 ⇨ 1
@@ -281,11 +287,9 @@ module Attempt2 where
   ex6′ = ex6
   ex7′ = ex7
 
-
-
-  d₀′ d₁′ : 1 ⇨ 2
+  d₀′ d₁′ : 4 ⇨ 2
   d₀′ = d₀
   d₁′ = d₁
 
   _ : Set
-  _ = {! ex6′!}
+  _ = {! d₀′!}
