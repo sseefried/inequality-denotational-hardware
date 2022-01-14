@@ -1,6 +1,6 @@
 {-# OPTIONS --without-K --safe #-}
 
-module MonoidHomomorphism where
+module MonoidLawTransfer where
 
 open import Data.Product
 open import Level using (Level)
@@ -22,7 +22,13 @@ record Monoid (A : Set) : Set₁ where
 open Monoid ⦃ … ⦄ public
 
 record MonoidHomomorphism (⟦_⟧ : A → B) (_≈₂_ : B → B → Set)
-                          ⦃ _ : Monoid A ⦄ ⦃ _ : Monoid B ⦄ : Set where
+                          (monoidA : Monoid A) (monoidB : Monoid B) : Set where
+  instance
+    _ : Monoid A
+    _ = monoidA
+    _ : Monoid B
+    _ = monoidB
+
   field
     ε-homo : ⟦ ε ⟧ ≈₂ ε
     homo : ∀ x y → ⟦ x ∙ y ⟧ ≈₂ ⟦ x ⟧ ∙ ⟦ y ⟧
