@@ -3,108 +3,112 @@
 module MonoidHomomorphism where
 
 open import Data.Product
-open import Level using (Level)
+open import Level using (Level) renaming (suc to lsuc)
+open import Algebra.Bundles
+open import Algebra.Structures
+open import Algebra.Definitions
+open import Algebra.Morphism.Structures
+
 
 private
   variable
-    a b : Level
-    A : Set a
-    B : Set b
+    c ℓ : Level
 
 open import Algebra.Core using (Op₂)
 
-record Monoid (A : Set) : Set₁ where
-   infixr 29 _∙_
+record PreRawMonoid c : Set (lsuc c) where
+   infixl 7 _∙_
    field
-      _∙_ : Op₂ A
-      ε   : A
+      Carrier : Set c
+      _∙_ : Op₂ Carrier
+      ε   : Carrier
 
-open Monoid ⦃ … ⦄ public
+record MonoidLawTransfer ⦃ PM₁ : PreRawMonoid c ⦄ ⦃ M₂ : RawMonoid c ℓ ⦄ : Set where
+  open PreRawMonoid PM₁ renaming (Carrier to A; _∙_ to _∙_; ε to ε₁)
+  open RawMonoid    M₂  renaming (Carrier to B; _≈_ to _≈₂_;  _∙_ to _◦_; ε to ε₂)
 
-record MonoidHomomorphism (⟦_⟧ : A → B) (_≈₂_ : B → B → Set)
-                          ⦃ _ : Monoid A ⦄ ⦃ _ : Monoid B ⦄ : Set where
-  field
-    monoid-homo-id : ⟦ ε ⟧ ≈₂ ε
-    monoid-homo-op : ∀ x y → ⟦ x ∙ y ⟧ ≈₂ ⟦ x ⟧ ∙ ⟦ y ⟧
+  module LawTransfer (⟦_⟧ : A → B) where
 
-  open import Algebra.Definitions
-  open import Algebra.Structures
-  open IsMonoid ⦃ … ⦄ public
-  open Level
-  open import Relation.Binary
+    _≈₁_ : A → A → Set ℓ
+    a ≈₁ b = ⟦ a ⟧ ≈₂ ⟦ b ⟧
 
-  _≈₁_ : A → A → Set
-  a ≈₁ b = ⟦ a ⟧ ≈₂ ⟦ b ⟧
+    M₁ : RawMonoid c ℓ
+    M₁ = record { Carrier = A ; _≈_ = _≈₁_ ; _∙_ = _∙_ ; ε = ε₁ }
 
-  is-monoid-via-homomorphism : IsMonoid _≈₂_ _∙_ ε → IsMonoid _≈₁_ _∙_ ε
-  is-monoid-via-homomorphism is-monoid₂ =
-    record
-      { isSemigroup =
-          record
-            { isMagma =
-                record
-                  { isEquivalence = record { refl = refl; sym = sym; trans = trans }
-                  ; ∙-cong = ∙-congruent
-                  }
-            ; assoc = ∙-assoc
-            }
-      ; identity = ∙-identityˡ , ∙-identityʳ
-      }
-    where
-      instance
-        _ : IsMonoid _≈₂_ _∙_ ε
-        _ = is-monoid₂
+    lawTransfer : IsMonoidHomomorphism M₁ M₂ ⟦_⟧ → IsMonoid _≈₂_ _◦_ ε₂ → IsMonoid _≈₁_ _∙_ ε₁
+    lawTransfer monoid-homo is-monoid₂ =
+      record
+        { isSemigroup =
+            record
+              { isMagma =
+                  record
+                    { isEquivalence = record { refl = refl; sym = sym; trans = trans }
+                    ; ∙-cong = ∙-congruent
+                    }
+              ; assoc = ∙-assoc
+              }
+        ; identity = ∙-identityˡ , ∙-identityʳ
+        }
+      where
+        open IsMonoidHomomorphism ⦃ … ⦄ public
+        open IsMonoid ⦃ … ⦄ public
+        instance
+          _ : IsMonoidHomomorphism M₁ M₂ ⟦_⟧
+          _ = monoid-homo
 
-      open import Relation.Binary.Reasoning.Setoid (setoid)
+          _ : IsMonoid _≈₂_ _◦_ ε₂
+          _ = is-monoid₂
 
-      ∙-congruent : Congruent₂ _≈₁_ _∙_
-      ∙-congruent {x} {y} {u} {v} x≈₁y u≈₁v =
-        begin
-          ⟦ x ∙ u ⟧
-        ≈⟨ monoid-homo-op x u ⟩
-          ⟦ x ⟧ ∙ ⟦ u ⟧
-        ≈⟨ ∙-cong x≈₁y u≈₁v ⟩
-          ⟦ y ⟧ ∙ ⟦ v ⟧
-        ≈⟨ sym (monoid-homo-op y v) ⟩
-          ⟦ y ∙ v ⟧
-        ∎
+        open import Relation.Binary.Reasoning.Setoid (setoid)
 
-      ∙-identityˡ : LeftIdentity _≈₁_ ε _∙_
-      ∙-identityˡ x =
-        begin
-          ⟦ ε ∙ x ⟧
-        ≈⟨ monoid-homo-op ε x  ⟩
-          ⟦ ε ⟧ ∙ ⟦ x ⟧
-        ≈⟨ ∙-congʳ monoid-homo-id ⟩
-          ε ∙ ⟦ x ⟧
-        ≈⟨ identityˡ ⟦ x ⟧ ⟩
-          ⟦ x ⟧
-        ∎
+        ∙-congruent : Congruent₂ _≈₁_ _∙_
+        ∙-congruent {x} {y} {u} {v} x≈₁y u≈₁v =
+          begin
+            ⟦ x ∙ u ⟧
+          ≈⟨ homo x u ⟩
+            ⟦ x ⟧ ◦ ⟦ u ⟧
+          ≈⟨ ∙-cong x≈₁y u≈₁v ⟩
+            ⟦ y ⟧ ◦ ⟦ v ⟧
+          ≈⟨ sym (homo y v) ⟩
+            ⟦ y ∙ v ⟧
+          ∎
 
-      ∙-identityʳ : RightIdentity _≈₁_ ε _∙_
-      ∙-identityʳ x =
-        begin
-          ⟦ x ∙ ε ⟧
-        ≈⟨ monoid-homo-op x ε ⟩
-          ⟦ x ⟧ ∙ ⟦ ε ⟧
-        ≈⟨ ∙-congˡ monoid-homo-id ⟩
-          ⟦ x ⟧ ∙ ε
-        ≈⟨ identityʳ ⟦ x ⟧ ⟩
-          ⟦ x ⟧
-        ∎
+        ∙-identityˡ : LeftIdentity _≈₁_ ε₁ _∙_
+        ∙-identityˡ x =
+          begin
+            ⟦ ε₁ ∙ x ⟧
+          ≈⟨ homo ε₁ x  ⟩
+            ⟦ ε₁ ⟧ ◦ ⟦ x ⟧
+          ≈⟨ ∙-congʳ ε-homo ⟩
+            ε₂ ◦ ⟦ x ⟧
+          ≈⟨ identityˡ ⟦ x ⟧ ⟩
+            ⟦ x ⟧
+          ∎
 
-      ∙-assoc : Associative _≈₁_ _∙_
-      ∙-assoc x y z =
-        begin
-          ⟦ (x ∙ y) ∙ z ⟧
-        ≈⟨ monoid-homo-op (x ∙ y) z ⟩
-          ⟦ x ∙ y ⟧ ∙ ⟦ z ⟧
-        ≈⟨ ∙-congʳ (monoid-homo-op x y) ⟩
-          (⟦ x ⟧ ∙ ⟦ y ⟧) ∙ ⟦ z ⟧
-        ≈⟨ assoc ⟦ x ⟧ ⟦ y ⟧ ⟦ z ⟧ ⟩
-          ⟦ x ⟧ ∙ (⟦ y ⟧ ∙ ⟦ z ⟧)
-        ≈⟨ sym  (∙-congˡ (monoid-homo-op y z)) ⟩
-          ⟦ x ⟧ ∙ ⟦ y ∙ z ⟧
-        ≈⟨ sym (monoid-homo-op x (y ∙ z)) ⟩
-          ⟦ x ∙ (y ∙ z) ⟧
-        ∎
+        ∙-identityʳ : RightIdentity _≈₁_ ε₁ _∙_
+        ∙-identityʳ x =
+          begin
+            ⟦ x ∙ ε₁ ⟧
+          ≈⟨ homo x ε₁ ⟩
+            ⟦ x ⟧ ◦ ⟦ ε₁ ⟧
+          ≈⟨ ∙-congˡ ε-homo ⟩
+            ⟦ x ⟧ ◦ ε₂
+          ≈⟨ identityʳ ⟦ x ⟧ ⟩
+            ⟦ x ⟧
+          ∎
+
+        ∙-assoc : Associative _≈₁_ _∙_
+        ∙-assoc x y z =
+          begin
+            ⟦ (x ∙ y) ∙ z ⟧
+          ≈⟨ homo (x ∙ y) z ⟩
+            ⟦ x ∙ y ⟧ ◦ ⟦ z ⟧
+          ≈⟨ ∙-congʳ (homo x y) ⟩
+            (⟦ x ⟧ ◦ ⟦ y ⟧) ◦ ⟦ z ⟧
+          ≈⟨ assoc ⟦ x ⟧ ⟦ y ⟧ ⟦ z ⟧ ⟩
+            ⟦ x ⟧ ◦ (⟦ y ⟧ ◦ ⟦ z ⟧)
+          ≈⟨ sym  (∙-congˡ (homo y z)) ⟩
+            ⟦ x ⟧ ◦ ⟦ y ∙ z ⟧
+          ≈⟨ sym (homo x (y ∙ z)) ⟩
+            ⟦ x ∙ (y ∙ z) ⟧
+          ∎
