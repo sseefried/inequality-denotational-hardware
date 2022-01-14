@@ -24,8 +24,8 @@ open Monoid ⦃ … ⦄ public
 record MonoidHomomorphism (⟦_⟧ : A → B) (_≈₂_ : B → B → Set)
                           ⦃ _ : Monoid A ⦄ ⦃ _ : Monoid B ⦄ : Set where
   field
-    monoid-homo-id : ⟦ ε ⟧ ≈₂ ε
-    monoid-homo-op : ∀ x y → ⟦ x ∙ y ⟧ ≈₂ ⟦ x ⟧ ∙ ⟦ y ⟧
+    ε-homo : ⟦ ε ⟧ ≈₂ ε
+    homo : ∀ x y → ⟦ x ∙ y ⟧ ≈₂ ⟦ x ⟧ ∙ ⟦ y ⟧
 
   open import Algebra.Definitions
   open import Algebra.Structures
@@ -61,11 +61,11 @@ record MonoidHomomorphism (⟦_⟧ : A → B) (_≈₂_ : B → B → Set)
       ∙-congruent {x} {y} {u} {v} x≈₁y u≈₁v =
         begin
           ⟦ x ∙ u ⟧
-        ≈⟨ monoid-homo-op x u ⟩
+        ≈⟨ homo x u ⟩
           ⟦ x ⟧ ∙ ⟦ u ⟧
         ≈⟨ ∙-cong x≈₁y u≈₁v ⟩
           ⟦ y ⟧ ∙ ⟦ v ⟧
-        ≈⟨ sym (monoid-homo-op y v) ⟩
+        ≈⟨ sym (homo y v) ⟩
           ⟦ y ∙ v ⟧
         ∎
 
@@ -73,9 +73,9 @@ record MonoidHomomorphism (⟦_⟧ : A → B) (_≈₂_ : B → B → Set)
       ∙-identityˡ x =
         begin
           ⟦ ε ∙ x ⟧
-        ≈⟨ monoid-homo-op ε x  ⟩
+        ≈⟨ homo ε x  ⟩
           ⟦ ε ⟧ ∙ ⟦ x ⟧
-        ≈⟨ ∙-congʳ monoid-homo-id ⟩
+        ≈⟨ ∙-congʳ ε-homo ⟩
           ε ∙ ⟦ x ⟧
         ≈⟨ identityˡ ⟦ x ⟧ ⟩
           ⟦ x ⟧
@@ -85,9 +85,9 @@ record MonoidHomomorphism (⟦_⟧ : A → B) (_≈₂_ : B → B → Set)
       ∙-identityʳ x =
         begin
           ⟦ x ∙ ε ⟧
-        ≈⟨ monoid-homo-op x ε ⟩
+        ≈⟨ homo x ε ⟩
           ⟦ x ⟧ ∙ ⟦ ε ⟧
-        ≈⟨ ∙-congˡ monoid-homo-id ⟩
+        ≈⟨ ∙-congˡ ε-homo ⟩
           ⟦ x ⟧ ∙ ε
         ≈⟨ identityʳ ⟦ x ⟧ ⟩
           ⟦ x ⟧
@@ -97,14 +97,14 @@ record MonoidHomomorphism (⟦_⟧ : A → B) (_≈₂_ : B → B → Set)
       ∙-assoc x y z =
         begin
           ⟦ (x ∙ y) ∙ z ⟧
-        ≈⟨ monoid-homo-op (x ∙ y) z ⟩
+        ≈⟨ homo (x ∙ y) z ⟩
           ⟦ x ∙ y ⟧ ∙ ⟦ z ⟧
-        ≈⟨ ∙-congʳ (monoid-homo-op x y) ⟩
+        ≈⟨ ∙-congʳ (homo x y) ⟩
           (⟦ x ⟧ ∙ ⟦ y ⟧) ∙ ⟦ z ⟧
         ≈⟨ assoc ⟦ x ⟧ ⟦ y ⟧ ⟦ z ⟧ ⟩
           ⟦ x ⟧ ∙ (⟦ y ⟧ ∙ ⟦ z ⟧)
-        ≈⟨ sym  (∙-congˡ (monoid-homo-op y z)) ⟩
+        ≈⟨ sym  (∙-congˡ (homo y z)) ⟩
           ⟦ x ⟧ ∙ ⟦ y ∙ z ⟧
-        ≈⟨ sym (monoid-homo-op x (y ∙ z)) ⟩
+        ≈⟨ sym (homo x (y ∙ z)) ⟩
           ⟦ x ∙ (y ∙ z) ⟧
         ∎
