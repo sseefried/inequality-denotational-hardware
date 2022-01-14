@@ -50,15 +50,8 @@ record MonoidLawTransfer ⦃ PM₁ : PreRawMonoid c ⦄ ⦃ M₂ : RawMonoid c �
         ; identity = ∙-identityˡ , ∙-identityʳ
         }
       where
-        open IsMonoidHomomorphism ⦃ … ⦄ public
-        open IsMonoid ⦃ … ⦄ public
-        instance
-          _ : IsMonoidHomomorphism M₁ M₂ ⟦_⟧
-          _ = monoid-homo
-
-          _ : IsMonoid _≈₂_ _◦_ ε₂
-          _ = is-monoid₂
-
+        open IsMonoidHomomorphism monoid-homo
+        open IsMonoid is-monoid₂
         open import Relation.Binary.Reasoning.Setoid (setoid)
 
         ∙-congruent : Congruent₂ _≈₁_ _∙_
