@@ -35,7 +35,7 @@ record RMonoid {o ℓ : Level} {obj : Set o} ⦃ products : Products obj ⦄ ⦃
     is< : ⊤ ⇨ ⋚
     is> : ⊤ ⇨ ⋚
     is= : ⊤ ⇨ ⋚
-    ⟨△⟩ : ⋚ × ⋚ ⇨ ⋚
+    ⟨▲⟩ : ⋚ × ⋚ ⇨ ⋚
 
 open RMonoid ⦃ … ⦄ public
 
@@ -52,31 +52,31 @@ ex0 : expr
 ex0 = is<
 
 ex1 : expr
-ex1 = ⟨△⟩ ∘ (is<  ▵ is= )
+ex1 = ⟨▲⟩ ∘ (is<  ▵ is= )
 
 ex2 : expr
-ex2 = ⟨△⟩ ∘ (⟨△⟩ ∘ (is<  ▵ is= ) ▵ ⟨△⟩ ∘ (is>  ▵ is< ))
+ex2 = ⟨▲⟩ ∘ (⟨▲⟩ ∘ (is<  ▵ is= ) ▵ ⟨▲⟩ ∘ (is>  ▵ is< ))
 
 ex3 : expr
-ex3 = ⟨△⟩ ∘ (bigger ▵ smaller)
+ex3 = ⟨▲⟩ ∘ (bigger ▵ smaller)
   where
-    bigger = ⟨△⟩ ∘ (⟨△⟩ ∘ (is<  ▵ is= ) ▵ ⟨△⟩ ∘ (is>  ▵ is< ))
-    smaller = ⟨△⟩ ∘ (is<  ▵ is= )
+    bigger = ⟨▲⟩ ∘ (⟨▲⟩ ∘ (is<  ▵ is= ) ▵ ⟨▲⟩ ∘ (is>  ▵ is< ))
+    smaller = ⟨▲⟩ ∘ (is<  ▵ is= )
 
 ex4 : expr
 ex4 {_} {_} {_⇨_} = step3
   where
     step1a step1b step1c step1d step2a step2b step3 : ⊤ ⇨ ⋚
-    step1a = ⟨△⟩ ∘ (is<  ▵ is= )
-    step1b = ⟨△⟩ ∘ (is>  ▵ is= )
-    step1c = ⟨△⟩ ∘ (is=  ▵ is> )
-    step1d = ⟨△⟩ ∘ (is<  ▵ is< )
-    step2a = ⟨△⟩ ∘ (step1a  ▵ step1b )
-    step2b = ⟨△⟩ ∘ (step1c  ▵ step1d )
-    step3  = ⟨△⟩ ∘ (step2a  ▵ step2b )
+    step1a = ⟨▲⟩ ∘ (is<  ▵ is= )
+    step1b = ⟨▲⟩ ∘ (is>  ▵ is= )
+    step1c = ⟨▲⟩ ∘ (is=  ▵ is> )
+    step1d = ⟨▲⟩ ∘ (is<  ▵ is< )
+    step2a = ⟨▲⟩ ∘ (step1a  ▵ step1b )
+    step2b = ⟨▲⟩ ∘ (step1c  ▵ step1d )
+    step3  = ⟨▲⟩ ∘ (step2a  ▵ step2b )
 
 ex5 : expr
-ex5 = ⟨△⟩ ∘ (is< ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is> ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is> ▵ (⟨△⟩ ∘ (is< ▵ is<)))))))))))))
+ex5 = ⟨▲⟩ ∘ (is< ▵ (⟨▲⟩ ∘ (is= ▵ (⟨▲⟩ ∘ (is> ▵ (⟨▲⟩ ∘ (is= ▵ (⟨▲⟩ ∘ (is= ▵ (⟨▲⟩ ∘ (is> ▵ (⟨▲⟩ ∘ (is< ▵ is<)))))))))))))
 
 
 ex6 ex7 : ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : ⋚-Rep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
@@ -93,15 +93,15 @@ ex6 {_} {_} {_⇨_} = step3
     x₇ = exr ∘ exr ∘ exr
 
     step1a step1b step1c step1d step2a step2b step3 : (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
-    step1a = ⟨△⟩ ∘ (x₀  ▵ x₁ )
-    step1b = ⟨△⟩ ∘ (x₂  ▵ x₃ )
-    step1c = ⟨△⟩ ∘ (x₄  ▵ x₅ )
-    step1d = ⟨△⟩ ∘ (x₆  ▵ x₇ )
-    step2a = ⟨△⟩ ∘ (step1a  ▵ step1b )
-    step2b = ⟨△⟩ ∘ (step1c  ▵ step1d )
-    step3  = ⟨△⟩ ∘ (step2a  ▵ step2b )
+    step1a = ⟨▲⟩ ∘ (x₀  ▵ x₁ )
+    step1b = ⟨▲⟩ ∘ (x₂  ▵ x₃ )
+    step1c = ⟨▲⟩ ∘ (x₄  ▵ x₅ )
+    step1d = ⟨▲⟩ ∘ (x₆  ▵ x₇ )
+    step2a = ⟨▲⟩ ∘ (step1a  ▵ step1b )
+    step2b = ⟨▲⟩ ∘ (step1c  ▵ step1d )
+    step3  = ⟨▲⟩ ∘ (step2a  ▵ step2b )
 
-ex7 {_} {_} {_⇨_} = ⟨△⟩ ∘ (x₀ ▵ (⟨△⟩ ∘ (x₁ ▵ (⟨△⟩ ∘ (x₂ ▵ (⟨△⟩ ∘ (x₃ ▵ (⟨△⟩ ∘ (x₄ ▵ (⟨△⟩ ∘ (x₅ ▵ (⟨△⟩ ∘ (x₆ ▵ x₇)))))))))))))
+ex7 {_} {_} {_⇨_} = ⟨▲⟩ ∘ (x₀ ▵ (⟨▲⟩ ∘ (x₁ ▵ (⟨▲⟩ ∘ (x₂ ▵ (⟨▲⟩ ∘ (x₃ ▵ (⟨▲⟩ ∘ (x₄ ▵ (⟨▲⟩ ∘ (x₅ ▵ (⟨▲⟩ ∘ (x₆ ▵ x₇)))))))))))))
   where
     x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ : (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
     x₀ = exl ∘ exl ∘ exl
@@ -117,10 +117,10 @@ expr2 : Setω
 expr2 = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : ⋚-Rep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ((⋚ × ⋚) × (⋚ × ⋚)) ⇨ (⋚ × ⋚)
 
 d₀ : expr2
-d₀ = ((⟨△⟩ ⊗ id) ∘ (id ⊗ ⟨△⟩))
+d₀ = ((⟨▲⟩ ⊗ id) ∘ (id ⊗ ⟨▲⟩))
 
 d₁ : expr2
-d₁ = ((⟨△⟩ ∘ id) ⊗ (id ∘ ⟨△⟩))
+d₁ = ((⟨▲⟩ ∘ id) ⊗ (id ∘ ⟨▲⟩))
 
 _⇨ᶜ_ : Unit → Unit → Set
 tt ⇨ᶜ tt = ℕ
@@ -157,8 +157,8 @@ module Attempt1 where
     _ = record { ⋚ = tt }
 
     _ : RMonoid _⇨ᶜ_
-    _ = record { is< = 0 ; is> = 0 ; is= = 0 ; ⟨△⟩ = 1 }
-    -- Justification: Applying ⟨△⟩ costs one unit of work. Everything else is zero
+    _ = record { is< = 0 ; is> = 0 ; is= = 0 ; ⟨▲⟩ = 1 }
+    -- Justification: Applying ⟨▲⟩ costs one unit of work. Everything else is zero
 
   ex0′ ex1′ ex2′ ex3′ ex4′ ex5′ d₀′ d₁′ : ℕ
   ex0′ = ex0 -- cost = 0
@@ -222,7 +222,7 @@ module Attempt2 where
 
   instance
     _ : Category {obj = ℕ} _⇨_
-    _ = record { id = identity ; _∘_ = _⨉_ }
+    _ = record { id = identity ; _∘_ = _∙_ }
 
     _ : Products ℕ
     _ = record { ⊤ = 1 ; _×_ = ℕ._+_ }
@@ -242,7 +242,7 @@ module Attempt2 where
     _ = record { is< = [[-∞]]
                ; is> = [[-∞]]
                ; is= = [[-∞]]
-               ; ⟨△⟩ = columnOf (finℤ 1ℤ)
+               ; ⟨▲⟩ = columnOf (finℤ 1ℤ)
                }
 
   ex0′ ex1′ ex2′ ex3′ ex4′ ex5′  : 1 ⇨ 1
