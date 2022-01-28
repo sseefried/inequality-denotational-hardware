@@ -2,7 +2,7 @@ module OrderingMonoid where
 
 import Level as L
 open import Data.Bool
-open import Data.Nat hiding (_⊔_;_+_)
+open import Data.Nat hiding (_⊔_;_+_;_*_)
 open import Data.Nat.Properties
 import Data.Nat as ℕ
 import Data.Nat.Properties as ℕ
@@ -176,69 +176,43 @@ module Attempt1 where
 module Attempt2 where
   open import Data.Vec
   import Data.Vec as V
-  open import Data.Integer hiding (_+_)
+  open import Data.Integer hiding (_+_; _*_)
   import Data.Integer as ℤ
   import Data.Sign as S
   open Data.Product renaming  (_×_ to _×′)
-  open import Function hiding (id)
-
-  Matrix : Set → ℕ → ℕ → Set
-  Matrix A m n =  Vec (Vec A n) m
-
+  open import Function hiding (id; _↔_)
 
   data ℤ∞ : Set where
     -∞   : ℤ∞
     finℤ : ℤ → ℤ∞
 
-  #1 : ℤ∞
-  #1 = finℤ 0ℤ
+  open import Algebra.Bundles using (RawSemiring)
 
-  #0 : ℤ∞
-  #0 = -∞
-
-  _+_ : ℤ∞ → ℤ∞ → ℤ∞
-  -∞ + _  = -∞
-  _  + -∞ = -∞
-  (finℤ m) + (finℤ n) = finℤ (m ℤ.+ n)
-
-  ℤ∞-max : ℤ∞ → ℤ∞ → ℤ∞
-  ℤ∞-max -∞ b = b
-  ℤ∞-max a -∞ = a
-  ℤ∞-max (finℤ m) (finℤ n) = finℤ (m ℤ.⊔ n)
-
-  _∙_ : {n : ℕ} → Vec ℤ∞ n → Vec ℤ∞ n → ℤ∞
-  _∙_ {n} v₁ v₂ = foldl _ ℤ∞-max #0 (zipWith _+_ v₁ v₂)
-
-  -- objects are ℤ
-  -- morphisms are matrices
-  -- composition is matrix multiplication
-
-  cross : ∀ {A} {m n : ℕ} → Vec A m → Vec A n → Matrix (A ×′ A) m n
-  cross {m = zero} _ _ = []
-  cross {m = suc m} (x₁ ∷ x₁s) x₂s =  (V.map (λ x₂ → (x₁ , x₂)) x₂s) ∷ cross x₁s x₂s
-
-  identityMatrix : {n : ℕ} → Matrix ℤ∞ n n
-  identityMatrix = V.map 1-in-pos indices
+  ℤ∞-Semiring : RawSemiring 0ℓ 0ℓ
+  ℤ∞-Semiring =
+    record
+      { Carrier = ℤ∞
+      ; _≈_ = _≡_
+      ; _+_ = ℤ∞-max
+      ; _*_ = _+_
+      ; 0# = -∞
+      ; 1# = finℤ 0ℤ
+      }
     where
-      1-in-pos : {n : ℕ} → ℕ → Vec ℤ∞ n
-      1-in-pos {zero} _ = []
-      1-in-pos {suc n} m with m ℕ.≟ n
-      ... | yes refl = #1 ∷ 1-in-pos m
-      ... | no _     = #0 ∷ 1-in-pos m
+      _+_ : ℤ∞ → ℤ∞ → ℤ∞
+      -∞ + _  = -∞
+      _  + -∞ = -∞
+      (finℤ m) + (finℤ n) = finℤ (m ℤ.+ n)
 
-      indices : {n : ℕ} → Vec ℕ n
-      indices {zero}  = []
-      indices {suc n} = n ∷ indices {n}
+      ℤ∞-max : ℤ∞ → ℤ∞ → ℤ∞
+      ℤ∞-max -∞ b = b
+      ℤ∞-max a -∞ = a
+      ℤ∞-max (finℤ m) (finℤ n) = finℤ (m ℤ.⊔ n)
 
-  _∗_ : {m n p : ℕ} → Matrix ℤ∞ m n → Matrix ℤ∞ n p → Matrix ℤ∞ m p
-  [] ∗ _ = []
-  _∗_ {suc m} (v₁ ∷ m₁) m₂ = V.map (v₁ ∙_) (V.transpose m₂) ∷ m₁ ∗ m₂
+  open import Matrix ℤ∞-Semiring
 
   _⇨_ : ℕ → ℕ → Set
-  c ⇨ r = Matrix ℤ∞ r c
-
-  zeroMatrix : {m n : ℕ} → Matrix ℤ∞ m n
-  zeroMatrix = replicate (replicate #0)
+  c ⇨ r = Matrix ℤ∞ r c -- TODO: Remove need for ℤ∞
 
   [[-∞]] : 1 ⇨ 1
   [[-∞]] = zeroMatrix
@@ -246,24 +220,20 @@ module Attempt2 where
   [[0]] : 1 ⇨ 1
   [[0]] = identityMatrix
 
-  -- [A | B]
-  joinMatrix : {m n p : ℕ} → Matrix ℤ∞ m n → Matrix ℤ∞ m p → Matrix ℤ∞ m (n ℕ.+ p)
-  joinMatrix = zipWith V._++_
-
   instance
     _ : Category {obj = ℕ} _⇨_
-    _ = record { id = identityMatrix ; _∘_ = _∗_ }
+    _ = record { id = identityMatrix ; _∘_ = _⨉_ }
 
     _ : Products ℕ
     _ = record { ⊤ = 1 ; _×_ = ℕ._+_ }
 
     _ : Cartesian {obj = ℕ} _⇨_
-    _ = record { !   = replicate #0 ∷ []
+    _ = record { !   = zeroColumn
                ; _▵_ = V._++_ -- [A]
                               -- [-]
                               -- [B]
-               ; exl = joinMatrix identityMatrix zeroMatrix
-               ; exr = joinMatrix zeroMatrix identityMatrix
+               ; exl = identityMatrix ↔ zeroMatrix
+               ; exr = zeroMatrix ↔ identityMatrix
                }
     _ : ⋚-Rep ℕ
     _ = record { ⋚ = 1 }
@@ -272,7 +242,7 @@ module Attempt2 where
     _ = record { is< = [[-∞]]
                ; is> = [[-∞]]
                ; is= = [[-∞]]
-               ; ⟨△⟩ = (finℤ 1ℤ ∷ finℤ 1ℤ ∷ []) ∷ []
+               ; ⟨△⟩ = columnOf (finℤ 1ℤ)
                }
 
   ex0′ ex1′ ex2′ ex3′ ex4′ ex5′  : 1 ⇨ 1
