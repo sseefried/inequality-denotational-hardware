@@ -13,5 +13,4 @@ Figures/*.pdf
 Scratch.agda
 EndoFunctionsAsAMonoid.agda
 LogicTest.agda
-Matrix.agda
 MatrixOfVectors.agda
