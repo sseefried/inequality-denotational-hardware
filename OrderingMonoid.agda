@@ -154,7 +154,7 @@ module Attempt1 where
 --    _ : Laws.Cartesian _⇨ᶜ_ can't be proved
 
     _ : RRep Unit
-    _ = record { R = tt }
+    _ = record { ⋚ = tt }
 
     _ : RMonoid _⇨ᶜ_
     _ = record { is< = 0 ; is> = 0 ; is= = 0 ; ⟨△⟩ = 1 }
