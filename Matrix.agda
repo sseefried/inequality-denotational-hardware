@@ -24,8 +24,8 @@ module Matrix (sr : RawSemiring 0ℓ 0ℓ) where
   Matrix = MatrixPoly A
 
   private
-    _∙_ : {n : ℕ} → Vec A n → Vec A n → A
-    _∙_ {n} v₁ v₂ = foldl _ _+_ 0# (zipWith _*_ v₁ v₂)
+    _·_ : {n : ℕ} → Vec A n → Vec A n → A
+    _·_ {n} v₁ v₂ = foldl _ _+_ 0# (zipWith _*_ v₁ v₂)
 
     cross : ∀ {A} {m n : ℕ} → Vec A m → Vec A n → MatrixPoly (A × A) m n
     cross {m = zero} _ _ = []
@@ -44,9 +44,9 @@ module Matrix (sr : RawSemiring 0ℓ 0ℓ) where
       indices {zero}  = []
       indices {suc n} = n ∷ indices {n}
 
-  _⨉_ : {m n p : ℕ} → Matrix m n → Matrix n p → Matrix m p
-  [] ⨉ _ = []
-  _⨉_ {suc m} (v₁ ∷ m₁) m₂ = map (v₁ ∙_) (transpose m₂) ∷ m₁ ⨉ m₂
+  _∙_ : {m n p : ℕ} → Matrix m n → Matrix n p → Matrix m p
+  [] ∙ _ = []
+  _∙_ {suc m} (v₁ ∷ m₁) m₂ = map (v₁ ·_) (transpose m₂) ∷ m₁ ∙ m₂
 
   allZero : {m n : ℕ} → Matrix m n
   allZero = replicate (replicate 0#)
