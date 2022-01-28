@@ -239,15 +239,19 @@ This led me to consider a new data type.
 Instead of a pair of booleans denoting less-than and equality
 relationships between two numbers, we can instead ask "what is the
 relationship between two numbers"? This leads us to define to the
-following data type `R` which denotes whether two numbers are
-less-than, equal, or greater-than each other respectively.
+following data type `⋚` which is pronounced "ordering". It denotes
+whether two numbers are less-than, equal, or greater-than each other
+respectively. Incidentally it's "quail" shortcut in Agda is
+`\lesseqgtr` (`less` `eq` `gtr`) which further confirms its
+suitability as a choice of symbol.
+
 
 
 ```agda
-data R : Set where
-  is< : R
-  is= : R
-  is> : R
+data ⋚ : Set where
+  is< : ⋚
+  is= : ⋚
+  is> : ⋚
 ```
 
 This has some immediate implications. First, in order to define a
@@ -256,7 +260,7 @@ require an auxillary function of type `R → 𝔹`. Fortunately, this
 is trivial to define.
 
 ```agda
-R-is≤ : R → 𝔹
+R-is≤ : ⋚ → 𝔹
 R-is≤ is< = 𝕥
 R-is≤ is= = 𝕥
 R-is≤ is> = 𝕗
@@ -268,11 +272,11 @@ of deriving a less-than-or-equal function we have come up with a
 building block that can be used for equality and any of the other
 inequality relations. This delights me.
 
-Now that we have declared the `R` data type we no longer have need of
+Now that we have declared the `⋚` data type we no longer have need of
 functions `𝔽<`, `𝔽=`, etc. Instead we define a function `𝔽-compare`.
 
 ```agda
-𝔽-compare : {i,j : ℕ²} → 𝔽² i,j → R
+𝔽-compare : {i,j : ℕ²} → 𝔽² i,j → ⋚
 𝔽-compare (zero , zero)    = is=
 𝔽-compare (zero , suc _)   = is<
 𝔽-compare (suc _ , zero)   = is>
@@ -283,7 +287,7 @@ We also define an equivalent function on ℕ and prove a correspondence
 between the two.
 
 ```agda
-ℕ-compare : ℕ² → R
+ℕ-compare : ℕ² → ⋚
 ℕ-compare (zero , zero)    = is=
 ℕ-compare (zero , suc _)   = is<
 ℕ-compare (suc _ , zero)   = is>
@@ -332,7 +336,7 @@ leads to this type signature:
     𝔽-compareᶜ : {i,j : ℕ} → R × 𝔽² i,j → R
 
 Even at this point I was uneasy since the carry-in value was of type
-`R`, which is also the result type. This is quite different to the
+`⋚`, which is also the result type. This is quite different to the
 case for ripple adders where there is a distinction between the result
 of adding two digits and the carry-out value of adding those two
 digits. That is, an adder for a digit produces a pair of results.
@@ -424,15 +428,15 @@ correspond to computations performed by gates at the same depth in the
 circuit, and the depth of the circuit corresponds to the number of
 steps in the evaluation.
 
-In the next section we investigate whether the `R` data type is a
+In the next section we investigate whether the `⋚` data type is a
 semigroup. We discover that is a slighlty embelished structure known
 as a _monoid_. A monoid, in addition to being closed over an associate
 binary operator has a distinguished value, `e`, called the _identity_ such that
 for all `a` both `a ⊕ e = a` and `e ⊕ a = a`.
 
-## A monoid on `R`
+## A monoid on `⋚`
 
-Can we find an associative binary operator on `R`? Yes, it turns
+Can we find an associative binary operator on `⋚`? Yes, it turns
 out. We can do it by investigating what happens when we pair two
 comparisons together.
 
@@ -448,7 +452,7 @@ This leads to the following definition of the operator, which we have
 called `⟨▲⟩`.
 
 ```agda
-⟨▲⟩ : R × R → R
+⟨▲⟩ : ⋚ × ⋚ → ⋚
 ⟨▲⟩ (is= , r₂) = r₂
 ⟨▲⟩ (is< , _)  = is<
 ⟨▲⟩ (is> , _)  = is>
@@ -466,11 +470,11 @@ defined in terms of uncurried functions.
 ```agda
 module _▲_-proofs where
   open import Algebra.Core
-  open import Algebra.Structures {A = R} (_≡_)
-  open import Algebra.Definitions {A = R} (_≡_)
+  open import Algebra.Structures {A = ⋚} (_≡_)
+  open import Algebra.Definitions {A = ⋚} (_≡_)
 
 
-  _▲_ : Op₂ R
+  _▲_ : Op₂ ⋚
   _▲_ = curry ⟨▲⟩
 ```
 
@@ -534,14 +538,14 @@ This is captured the extended commutative tower below:
 
 Function `μ` is a meaning function that maps from a value of an arbitrary type
 `τ` back to a finite set of size `k`, while `ν` is a meaning function which
-maps from an arbitrary `ρ` type to the `R` type.
+maps from an arbitrary `ρ` type to the `⋚` type.
 
 We will want to prove that this diagram commutes for many different
 `μ` and `ν` values so we introduce a function `is-compare` that yields
 the proposition we wish to prove.
 
 ```agda
-is-compare : {ρ τ : Set} {k : ℕ} (μ : τ → 𝔽 k) (ν : ρ → R) (compare : τ × τ → ρ) → Set
+is-compare : {ρ τ : Set} {k : ℕ} (μ : τ → 𝔽 k) (ν : ρ → ⋚) (compare : τ × τ → ρ) → Set
 is-compare μ ν compare = ν ∘ compare ≗ 𝔽-compare ∘ (μ ⊗ μ)
 ```
 
@@ -550,7 +554,7 @@ fields a `compare` function and the proof that it is a compare
 function (i.e. satisfies `is-compare μ ν compare`).
 
 ```agda
-record Comparison {ρ τ : Set} {k : ℕ} (μ : τ → 𝔽 k) (ν : ρ → R): Set where
+record Comparison {ρ τ : Set} {k : ℕ} (μ : τ → 𝔽 k) (ν : ρ → ⋚): Set where
   constructor _⊣_
   field
     compare : τ × τ → ρ
@@ -592,10 +596,10 @@ F𝟚-to-𝔹∘𝔹-to-𝔽2≗ = λ { 𝕥 → refl; 𝕗 → refl }
 𝔹-to-𝔽2∘F𝟚-to-𝔹≗id = λ { zero → refl; (suc zero) → refl }
 ```
 
-### Comparing bits but leaving the representation of `R` abstract
+### Comparing bits but leaving the representation of `⋚` abstract
 
 We know that we want to compare single bits but, at this point, it is
-not clear what would be the best type to represent `R` with. In fact,
+not clear what would be the best type to represent `⋚` with. In fact,
 this question may not have a definitive answer. Accordingly we set `τ
 = 𝔹` and `μ = 𝔹-to-𝔽2`, but we leave `ρ` and `ν` abstract.
 
@@ -610,8 +614,8 @@ A convenient way to do this is to package up these three things into a Agda reco
 ```agda
 record R-Rep (ρ : Set) : Set where
   field
-    ν   : ρ → R
-    ν⁻¹ : R → ρ
+    ν   : ρ → ⋚
+    ν⁻¹ : ⋚ → ρ
     right-invertible : ν ∘ ν⁻¹ ≗ id
     -- ρ can have redundant values that map to the 3 values of R
     -- however this means it's not left invertible. i.e.  it is not true that ν⁻¹ ∘ ν ≗ id
@@ -650,7 +654,7 @@ is-𝔹-compare : {ρ : Set} → (rr : R-Rep ρ) → Set
 is-𝔹-compare rr = is-compare 𝔹-to-𝔽2 (R-Rep.ν rr) (𝔹-compare-ρ rr)
 ```
 
-## Two representations of `R`
+## Two representations of `⋚`
 
 Most modern hardware restricts itself to representing values only
 using bits. One can represent any type with `2ⁿ` values via a
@@ -662,17 +666,17 @@ complicated circuitry is an open question that I would like to explore
 further in future. However, for the purposes of this note I will use
 the standard techniques modern hardware uses.
 
-### A two-bit encoding of `R`
+### A two-bit encoding of `⋚`
 
-The encoding for `R` with the _least redundancy_ is a pair of bits
-(`𝔹²`). This type has 4 values while `R` has only 3 so their will be
-one redundant value. There are many ways to encode `R` using `𝔹²` but
+The encoding for `⋚` with the _least redundancy_ is a pair of bits
+(`𝔹²`). This type has 4 values while `⋚` has only 3 so their will be
+one redundant value. There are many ways to encode `⋚` using `𝔹²` but
 we choose and encoding where each element of the pair means
 something. The first element represents whether the value is `is<` and
 the second whether the value is `is=`. This gives us:
 
 ```agda
-R-to-𝔹² : R → 𝔹²
+R-to-𝔹² : ⋚ → 𝔹²
 R-to-𝔹² is< = (𝕥 , 𝕗)
 R-to-𝔹² is= = (𝕗 , 𝕥)
 R-to-𝔹² is> = (𝕗 , 𝕗)
@@ -681,9 +685,9 @@ R-to-𝔹² is> = (𝕗 , 𝕗)
 The missing value of `𝔹²` on the right hand side is `(𝕥 ,
 𝕥)`. Fortunately, this value would be meaningless since two numbers
 cannot both be less-than and equal to each other. Nevertheless, the
-redundancy of the `𝔹²` type in representing `R` values does not sit
+redundancy of the `𝔹²` type in representing `⋚` values does not sit
 well with me, and seems inelegant. The non-redundant representation of
-sum types like `R` is still an open problem in want of a solution.
+sum types like `⋚` is still an open problem in want of a solution.
 
 We want `R-to-𝔹²` to be invertible but this leads us to the question
 of what we should do with the input `(𝕥 , 𝕥)`. One choice is that it
@@ -693,7 +697,7 @@ first component is `𝕗`. This leads to this definition:
 
 
 ```agda
-𝔹²-to-R :  𝔹² → R
+𝔹²-to-R :  𝔹² → ⋚
 𝔹²-to-R (𝕥 , _) = is<
 𝔹²-to-R (𝕗 , 𝕥) = is=
 𝔹²-to-R (𝕗 , 𝕗) = is>
@@ -707,12 +711,12 @@ following is true.
 Thus we cannot prove that `R-to-𝔹² ∘ 𝔹²-to-R ≗ id` but we can prove
 `𝔹²-to-R ∘ R-to-𝔹² ≗ id`.
 
-### The "one-hot" three-bit-encoding of `R`
+### The "one-hot" three-bit-encoding of `⋚`
 
-## 3-bit representation of `R`
+## 3-bit representation of `⋚`
 
 It seems common in traditional hardware design to use a "one-hot"
-3-bit representation of the `R` type. That is, three wires only one of
+3-bit representation of the `⋚` type. That is, three wires only one of
 which can be true, the rest being false.
 
 ```agda
@@ -723,7 +727,7 @@ which can be true, the rest being false.
 Defining `R-to-𝔹³` is straightforward.
 
 ```agda
-R-to-𝔹³ : R → 𝔹³
+R-to-𝔹³ : ⋚ → 𝔹³
 R-to-𝔹³ is< = (𝕥 , 𝕗 , 𝕗)
 R-to-𝔹³ is= = (𝕗 , 𝕥 , 𝕗)
 R-to-𝔹³ is> = (𝕗 , 𝕗 , 𝕥)
@@ -748,16 +752,16 @@ position. This leads us to the following definition:
 
 
 ```agda
-𝔹³-to-R : 𝔹³ → R
+𝔹³-to-R : 𝔹³ → ⋚
 𝔹³-to-R (𝕗 , 𝕗 , 𝕗) = is<
 𝔹³-to-R (𝕥 , _ , _) = is<
 𝔹³-to-R (𝕗 , 𝕥 , _) = is=
 𝔹³-to-R (𝕗 , 𝕗 , 𝕥) = is>
 ```
 
-## Two one-bit comparison functions with different representations for `R`
+## Two one-bit comparison functions with different representations for `⋚`
 
-We can now create two `R-Rep` values for the case where `R` is
+We can now create two `R-Rep` values for the case where `⋚` is
 represented by `𝔹²` and ‵𝔹³` respectively. The proofs of right
 invertibility are straightforward and done by exhaustion.
 
@@ -852,7 +856,7 @@ open import Categorical.Homomorphism
 ## Hand-compiling down to categorical representation for `𝔹-compare-𝔹²`
 
 We have already defined the comparison function which uses `𝔹²` as its
-representation type for `R`. It is the `compare` field of record value
+representation type for `⋚`. It is the `compare` field of record value
 `𝔹-Comparison-𝔹²`.
 
 We'll start the hand-compilation process by writing down an equivalent
@@ -986,7 +990,7 @@ the two resulting values of `ρ` together somehow.
 
 But just how are these values to be combined? We can provide an
 operator `⟨△⟩ : ρ × ρ → ρ` to do just that. Earlier we defined `⟨▲⟩`
-and showed that `R` was a monoid under this associative binary
+and showed that `⋚` was a monoid under this associative binary
 operator. We want exactly the same for `⟨△⟩`. That is, we want `ρ` to
 be a monoid under the operator `⟨△⟩`. Further, `⟨△⟩` should be a
 refinement of `⟨▲⟩` according to the following diagram. Here `ν : ρ →
@@ -1007,7 +1011,7 @@ proving that combined comparison functions are still refinements of
 `𝔽-compare`.
 
 ```agda
-is-⟨▲⟩-refinement : {ρ : Set} → (ρ → R) → (△ : ρ × ρ → ρ) → Set
+is-⟨▲⟩-refinement : {ρ : Set} → (ρ → ⋚) → (△ : ρ × ρ → ρ) → Set
 is-⟨▲⟩-refinement ν ⟨△⟩ = ⟨▲⟩ ∘ (ν ⊗ ν) ≗ ν ∘ ⟨△⟩
 ```
 
@@ -1021,7 +1025,7 @@ module ⟨△⟩-proofs {ρ : Set} where
   open import Algebra.Definitions {A = ρ} (_≡_)
   open ≡-Reasoning
 
-  ⟨△⟩-is-identityˡ : {ν : ρ → R} {ν⁻¹ : R → ρ} {⟨△⟩ : ρ × ρ → ρ}
+  ⟨△⟩-is-identityˡ : {ν : ρ → ⋚} {ν⁻¹ : ⋚ → ρ} {⟨△⟩ : ρ × ρ → ρ}
                 → ν ∘ ν⁻¹ ≡ id
                 → ν⁻¹ ∘ ν ≡ id
                 → ν⁻¹ ∘ ⟨▲⟩ ∘ (ν ⊗ ν) ≗ ⟨△⟩
@@ -1044,7 +1048,7 @@ module ⟨△⟩-proofs {ρ : Set} where
         ∎)
 
 
-  ⟨△⟩-is-identityʳ : {ν : ρ → R} {ν⁻¹ : R → ρ} {⟨△⟩ : ρ × ρ → ρ}
+  ⟨△⟩-is-identityʳ : {ν : ρ → ⋚} {ν⁻¹ : ⋚ → ρ} {⟨△⟩ : ρ × ρ → ρ}
                 → ν ∘ ν⁻¹ ≡ id
                 → ν⁻¹ ∘ ν ≡ id
                 → ν⁻¹ ∘ ⟨▲⟩ ∘ (ν ⊗ ν) ≗ ⟨△⟩
@@ -1095,7 +1099,7 @@ mk-■̂ : ∀ {ρ τₘ τₙ} → (ρ × ρ ⇨ ρ) → D̂ τₘ ρ → D̂ �
 mk-■̂ ⟨△⟩ compareₘ compareₙ = ⟨△⟩ ∘ (compareₘ ⊗ compareₙ) ∘ transpose
 ```
 
-## A combinator for the `𝔹²` representation of `R`
+## A combinator for the `𝔹²` representation of `⋚`
 
 In this section we attempt to refine `⟨▲⟩` to `⟨△-𝔹²⟩ : 𝔹² × 𝔹² → 𝔹²`
 
@@ -1145,7 +1149,7 @@ We can also show that it's a refinement of `⟨▲⟩`, and a monoid operator.
     }
 ```
 
-## A combinator for the `𝔹³` representation of `R`
+## A combinator for the `𝔹³` representation of `⋚`
 
 A first attempt at the monoid operator is achieved by some simple
 equational reasoning on the definition of `⟨▲⟩`.
@@ -1277,11 +1281,11 @@ main = run do
 ## Appendix
 
 
-### Representing the `R` type using booleans and dependent products
+### Representing the `⋚` type using booleans and dependent products
 
 I mentioned earlier that there was a little redundancy in representing
-the `R` type using `𝔹²` and a lot of redundancy representing it with
-`𝔹³`. In this section I present a way to represent `R` in `𝔹³` with no
+the `⋚` type using `𝔹²` and a lot of redundancy representing it with
+`𝔹³`. In this section I present a way to represent `⋚` in `𝔹³` with no
 redundancy by using a dependent product. The first element of the
 dependent product is just `𝔹³` while the second element is a proof
 that the triple is "one-hot" which means that precisely one of the
@@ -1314,12 +1318,12 @@ is `hotness (𝕥 , 𝕗 , 𝕗) ≡ 1`.
 We can then define the conversion functions to and from `Σ𝔹³`.
 
 ```agda
-Σ𝔹³-to-R : Σ𝔹³ → R
+Σ𝔹³-to-R : Σ𝔹³ → ⋚
 Σ𝔹³-to-R ((𝕥 , 𝕗 , 𝕗) , refl) = is<
 Σ𝔹³-to-R ((𝕗 , 𝕥 , 𝕗) , refl) = is=
 Σ𝔹³-to-R ((𝕗 , 𝕗 , 𝕥) , refl) = is>
 
-R-to-Σ𝔹³ : R → Σ𝔹³
+R-to-Σ𝔹³ : ⋚ → Σ𝔹³
 R-to-Σ𝔹³ is< = ( (𝕥 , 𝕗 , 𝕗) , refl)
 R-to-Σ𝔹³ is= = ( (𝕗 , 𝕥 , 𝕗) , refl)
 R-to-Σ𝔹³ is> = ( (𝕗 , 𝕗 , 𝕥) , refl)
@@ -1343,20 +1347,12 @@ R-to-Σ𝔹∘Σ𝔹³-to-R ( (𝕗 , 𝕗 , 𝕥) , refl) = refl
 However, I don't yet know how to make this work with Conal's work on
 Compiling to Categories. This is an open problem at this point.
 
-
-
-
-
-
-
-
-
 -------------------------------------- begin scratch 2
 
 [TODO: Consider using Raw/Lawless representation for ⟨▲⟩ ]
 
 ```agda
-module homo-monoid-proof {ρ : Set} (ν : ρ → R) (⟨△⟩ : ρ × ρ → ρ) (e : ρ)
+module homo-monoid-proof {ρ : Set} (ν : ρ → ⋚) (⟨△⟩ : ρ × ρ → ρ) (e : ρ)
     ⦃ e-is= : ν e ≡ is= ⦄
     (is-refine : is-⟨▲⟩-refinement ν ⟨△⟩)
   where
