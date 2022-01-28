@@ -45,88 +45,85 @@ data Ty : Set where
   `⋚    : Ty
   _`×_  : Ty → Ty → Ty
 
-expr : Setω
-expr = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : ⋚-Rep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ⊤ ⇨ ⋚
 
-ex0 : expr
-ex0 = is<
+module Examples where
 
-ex1 : expr
-ex1 = ⟨▲⟩ ∘ (is<  ▵ is= )
+  expr : Setω
+  expr = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : ⋚-Rep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ⊤ ⇨ ⋚
 
-ex2 : expr
-ex2 = ⟨▲⟩ ∘ (⟨▲⟩ ∘ (is<  ▵ is= ) ▵ ⟨▲⟩ ∘ (is>  ▵ is< ))
+  ex0 : expr
+  ex0 = is<
 
-ex3 : expr
-ex3 = ⟨▲⟩ ∘ (bigger ▵ smaller)
-  where
-    bigger = ⟨▲⟩ ∘ (⟨▲⟩ ∘ (is<  ▵ is= ) ▵ ⟨▲⟩ ∘ (is>  ▵ is< ))
-    smaller = ⟨▲⟩ ∘ (is<  ▵ is= )
+  ex1 : expr
+  ex1 = ⟨▲⟩ ∘ (is<  ▵ is= )
 
-ex4 : expr
-ex4 {_} {_} {_⇨_} = step3
-  where
-    step1a step1b step1c step1d step2a step2b step3 : ⊤ ⇨ ⋚
-    step1a = ⟨▲⟩ ∘ (is<  ▵ is= )
-    step1b = ⟨▲⟩ ∘ (is>  ▵ is= )
-    step1c = ⟨▲⟩ ∘ (is=  ▵ is> )
-    step1d = ⟨▲⟩ ∘ (is<  ▵ is< )
-    step2a = ⟨▲⟩ ∘ (step1a  ▵ step1b )
-    step2b = ⟨▲⟩ ∘ (step1c  ▵ step1d )
-    step3  = ⟨▲⟩ ∘ (step2a  ▵ step2b )
+  ex2 : expr
+  ex2 = ⟨▲⟩ ∘ (⟨▲⟩ ∘ (is<  ▵ is= ) ▵ ⟨▲⟩ ∘ (is>  ▵ is< ))
 
-ex5 : expr
-ex5 = ⟨▲⟩ ∘ (is< ▵ (⟨▲⟩ ∘ (is= ▵ (⟨▲⟩ ∘ (is> ▵ (⟨▲⟩ ∘ (is= ▵ (⟨▲⟩ ∘ (is= ▵ (⟨▲⟩ ∘ (is> ▵ (⟨▲⟩ ∘ (is< ▵ is<)))))))))))))
+  ex3 : expr
+  ex3 = ⟨▲⟩ ∘ (bigger ▵ smaller)
+    where
+      bigger = ⟨▲⟩ ∘ (⟨▲⟩ ∘ (is<  ▵ is= ) ▵ ⟨▲⟩ ∘ (is>  ▵ is< ))
+      smaller = ⟨▲⟩ ∘ (is<  ▵ is= )
+
+  ex4 : expr
+  ex4 {_} {_} {_⇨_} = step3
+    where
+      step1a step1b step1c step1d step2a step2b step3 : ⊤ ⇨ ⋚
+      step1a = ⟨▲⟩ ∘ (is<  ▵ is= )
+      step1b = ⟨▲⟩ ∘ (is>  ▵ is= )
+      step1c = ⟨▲⟩ ∘ (is=  ▵ is> )
+      step1d = ⟨▲⟩ ∘ (is<  ▵ is< )
+      step2a = ⟨▲⟩ ∘ (step1a  ▵ step1b )
+      step2b = ⟨▲⟩ ∘ (step1c  ▵ step1d )
+      step3  = ⟨▲⟩ ∘ (step2a  ▵ step2b )
+
+  ex5 : expr
+  ex5 = ⟨▲⟩ ∘ (is< ▵ (⟨▲⟩ ∘ (is= ▵ (⟨▲⟩ ∘ (is> ▵ (⟨▲⟩ ∘ (is= ▵ (⟨▲⟩ ∘ (is= ▵ (⟨▲⟩ ∘ (is> ▵ (⟨▲⟩ ∘ (is< ▵ is<)))))))))))))
 
 
-ex6 ex7 : ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : ⋚-Rep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
-ex6 {_} {_} {_⇨_} = step3
-  where
-    x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ : (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
-    x₀ = exl ∘ exl ∘ exl
-    x₁ = exr ∘ exl ∘ exl
-    x₂ = exl ∘ exr ∘ exl
-    x₃ = exr ∘ exr ∘ exl
-    x₄ = exl ∘ exl ∘ exr
-    x₅ = exr ∘ exl ∘ exr
-    x₆ = exl ∘ exr ∘ exr
-    x₇ = exr ∘ exr ∘ exr
+  ex6 ex7 : ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : ⋚-Rep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
+  ex6 {_} {_} {_⇨_} = step3
+    where
+      x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ : (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
+      x₀ = exl ∘ exl ∘ exl
+      x₁ = exr ∘ exl ∘ exl
+      x₂ = exl ∘ exr ∘ exl
+      x₃ = exr ∘ exr ∘ exl
+      x₄ = exl ∘ exl ∘ exr
+      x₅ = exr ∘ exl ∘ exr
+      x₆ = exl ∘ exr ∘ exr
+      x₇ = exr ∘ exr ∘ exr
 
-    step1a step1b step1c step1d step2a step2b step3 : (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
-    step1a = ⟨▲⟩ ∘ (x₀  ▵ x₁ )
-    step1b = ⟨▲⟩ ∘ (x₂  ▵ x₃ )
-    step1c = ⟨▲⟩ ∘ (x₄  ▵ x₅ )
-    step1d = ⟨▲⟩ ∘ (x₆  ▵ x₇ )
-    step2a = ⟨▲⟩ ∘ (step1a  ▵ step1b )
-    step2b = ⟨▲⟩ ∘ (step1c  ▵ step1d )
-    step3  = ⟨▲⟩ ∘ (step2a  ▵ step2b )
+      step1a step1b step1c step1d step2a step2b step3 : (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
+      step1a = ⟨▲⟩ ∘ (x₀  ▵ x₁ )
+      step1b = ⟨▲⟩ ∘ (x₂  ▵ x₃ )
+      step1c = ⟨▲⟩ ∘ (x₄  ▵ x₅ )
+      step1d = ⟨▲⟩ ∘ (x₆  ▵ x₇ )
+      step2a = ⟨▲⟩ ∘ (step1a  ▵ step1b )
+      step2b = ⟨▲⟩ ∘ (step1c  ▵ step1d )
+      step3  = ⟨▲⟩ ∘ (step2a  ▵ step2b )
 
-ex7 {_} {_} {_⇨_} = ⟨▲⟩ ∘ (x₀ ▵ (⟨▲⟩ ∘ (x₁ ▵ (⟨▲⟩ ∘ (x₂ ▵ (⟨▲⟩ ∘ (x₃ ▵ (⟨▲⟩ ∘ (x₄ ▵ (⟨▲⟩ ∘ (x₅ ▵ (⟨▲⟩ ∘ (x₆ ▵ x₇)))))))))))))
-  where
-    x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ : (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
-    x₀ = exl ∘ exl ∘ exl
-    x₁ = exr ∘ exl ∘ exl
-    x₂ = exl ∘ exr ∘ exl
-    x₃ = exr ∘ exr ∘ exl
-    x₄ = exl ∘ exl ∘ exr
-    x₅ = exr ∘ exl ∘ exr
-    x₆ = exl ∘ exr ∘ exr
-    x₇ = exr ∘ exr ∘ exr
+  ex7 {_} {_} {_⇨_} = ⟨▲⟩ ∘ (x₀ ▵ (⟨▲⟩ ∘ (x₁ ▵ (⟨▲⟩ ∘ (x₂ ▵ (⟨▲⟩ ∘ (x₃ ▵ (⟨▲⟩ ∘ (x₄ ▵ (⟨▲⟩ ∘ (x₅ ▵ (⟨▲⟩ ∘ (x₆ ▵ x₇)))))))))))))
+    where
+      x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ : (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
+      x₀ = exl ∘ exl ∘ exl
+      x₁ = exr ∘ exl ∘ exl
+      x₂ = exl ∘ exr ∘ exl
+      x₃ = exr ∘ exr ∘ exl
+      x₄ = exl ∘ exl ∘ exr
+      x₅ = exr ∘ exl ∘ exr
+      x₆ = exl ∘ exr ∘ exr
+      x₇ = exr ∘ exr ∘ exr
 
-expr2 : Setω
-expr2 = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : ⋚-Rep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ((⋚ × ⋚) × (⋚ × ⋚)) ⇨ (⋚ × ⋚)
+  expr2 : Setω
+  expr2 = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : ⋚-Rep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ((⋚ × ⋚) × (⋚ × ⋚)) ⇨ (⋚ × ⋚)
 
-d₀ : expr2
-d₀ = ((⟨▲⟩ ⊗ id) ∘ (id ⊗ ⟨▲⟩))
+  d₀ : expr2
+  d₀ = ((⟨▲⟩ ⊗ id) ∘ (id ⊗ ⟨▲⟩))
 
-d₁ : expr2
-d₁ = ((⟨▲⟩ ∘ id) ⊗ (id ∘ ⟨▲⟩))
-
-_⇨ᶜ_ : Unit → Unit → Set
-tt ⇨ᶜ tt = ℕ
-
-max : ℕ → ℕ → ℕ
-max x y = if x <ᵇ y then y else x
+  d₁ : expr2
+  d₁ = ((⟨▲⟩ ∘ id) ⊗ (id ∘ ⟨▲⟩))
 
 
 open import Data.Integer hiding (_+_; _*_)
@@ -191,21 +188,120 @@ instance
              ; ⟨▲⟩ = columnOf (finℤ 1ℤ)
              }
 
-ex0′ ex1′ ex2′ ex3′ ex4′ ex5′  : 1 ⇨ 1
-ex0′ = ex0
-ex1′ = ex1
-ex2′ = ex2
-ex3′ = ex3
-ex4′ = ex4
-ex5′ = ex5
+module Examples′ where
+  open Examples
 
-ex6′ ex7′ : 8 ⇨ 1
-ex6′ = ex6
-ex7′ = ex7
+  ex0′ ex1′ ex2′ ex3′ ex4′ ex5′  : 1 ⇨ 1
+  ex0′ = ex0
+  ex1′ = ex1
+  ex2′ = ex2
+  ex3′ = ex3
+  ex4′ = ex4
+  ex5′ = ex5
 
-d₀′ d₁′ : 4 ⇨ 2
-d₀′ = d₀
-d₁′ = d₁
+  ex6′ ex7′ : 8 ⇨ 1
+  ex6′ = ex6
+  ex7′ = ex7
 
-_ : Set
-_ = {! d₀′!}
+  d₀′ d₁′ : 4 ⇨ 2
+  d₀′ = d₀
+  d₁′ = d₁
+
+  _ : Set
+  _ = {! d₀′!}
+
+
+--
+-- Perfect trees
+--
+
+data PT (A : Set) : ℕ → Set where
+   nil  : PT A 0
+   leaf : A → PT A 0
+   fork : {n : ℕ} → A ×′ PT A n ×′ PT A n → PT A (ℕ.suc n)
+
+
+pt1 : PT ℕ 0
+pt1 = leaf 1
+
+--
+--      1
+--    2   3
+--  4  5  . .
+
+pt5 : PT ℕ 2
+pt5 = fork (1 , fork (2 , leaf 4 , leaf 5) , fork (3 , nil , nil))
+
+
+--
+--      1
+--    2   3
+--  4  5  6 .
+pt6 : PT ℕ 2
+pt6 = fork (1 , fork (2 , leaf 4 , leaf 5) , fork (3 , leaf 6 , nil))
+
+--
+--      1
+--    2   3
+--  4  5  6 7
+pt7 : PT ℕ 2
+pt7 = fork (1 , fork (2 , leaf 4 , leaf 5) , fork (3 , leaf 6 , leaf 7))
+
+
+--
+--        1
+--    2      3
+--  4   5   6   7
+-- 8 . . . . . . .
+pt8 : PT ℕ 3
+pt8 = fork (1 , fork (2 , fork (4 , leaf 8 , nil) , fork (5 , nil , nil))
+              , fork (3 , fork (6 , nil    , nil) , fork (7 , nil , nil)))
+
+--
+-- Now a function to map an arbitrary length list to a Perfect Tree
+--
+
+import Data.Bin as Bin
+open import Data.Vec
+
+⌊log₂_⌋ : ℕ → ℕ
+⌊log₂ n ⌋  = lg (fromℕ n)
+  where
+    open Bin
+    lg : Bin → ℕ
+    lg 0# = 0
+    lg  (b⁺ 1#) = Bin.⌊log₂ b⁺ ⌋
+
+_ : ℕ
+_ = {!⌊log₂ 1 ⌋!}
+
+--data P : Set where
+--  P1 : {n : ℕ} → n ≡ ⌊ n /2⌋ ℕ.+ ⌊ n /2⌋
+--  P2 : {n : ℕ} → n ≡ ⌊ n /2⌋ ℕ.+ ⌊ n /2⌋ + 1
+
+
+--splitHalf : {A : Set} {n : ℕ} → Vec A (ℕ.suc n) → Vec A ⌊ n /2⌋ ×′ Vec A ⌊ n /2⌋
+--splitHalf (a ∷ []) = [] , []
+--splitHalf (a ∷ as) =
+
+toPT : {A : Set} {n : ℕ} → Vec A n → PT A ⌊log₂ n ⌋
+toPT []       =  nil
+toPT (a ∷ []) = leaf a
+toPT {n = suc (suc  n)} (a ∷ as) =
+  let (as₁ , as₂) = split as
+  in fork (a , ? , ? )
+
+{-
+
+  1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ 6 ∷ 7 ∷ []
+⇒ fork (1 , (toPT  2 ∷ 3 ∷ 4 ∷ []) , (toPT  5 ∷ 6 ∷ 7 ∷ []))
+⇒ fork (1 , fork (2 , (toPT  3 ∷ []) (toPt 4 ∷ [])) , fork (5 , toPT 6 ∷ []) , toPT (7 ∷ []))
+
+  1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []
+⇒ fork (1 , (toPT  2 ∷ 3 ∷ []) , (toPT  4 ∷ 5 ∷ []))
+⇒ fork (1 , fork (2 , (toPT  3 ∷ []) (toPt [])) , fork (4 , toPT 5 ∷ []) , toPT [])
+⇒ fork (1 , fork (2 , leaf 3 , nil ) , fork (4 , leaf 5 , nil))
+
+
+
+-}

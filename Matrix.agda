@@ -1,7 +1,7 @@
 open import Level
 open import Algebra.Bundles
 
-module Matrix (sr : RawSemiring 0ℓ 0ℓ) where
+module Matrix (s : RawSemiring 0ℓ 0ℓ) where
   open import Data.Nat hiding (_+_; _*_)
   import Data.Nat as ℕ
   open import Data.Vec
@@ -15,10 +15,9 @@ module Matrix (sr : RawSemiring 0ℓ 0ℓ) where
     MatrixPoly : Set → ℕ → ℕ → Set
     MatrixPoly A m n = Vec (Vec A n) m
 
-
   instance
     _ : RawSemiring 0ℓ 0ℓ
-    _ = sr
+    _ = s
 
   Matrix : ℕ → ℕ → Set
   Matrix = MatrixPoly A
