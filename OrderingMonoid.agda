@@ -21,13 +21,13 @@ private variable
   o : Level
   obj : Set o
 
-record RRep {o : Level} (obj : Set o) : Set (lsuc o) where
+record ⋚-Rep {o : Level} (obj : Set o) : Set (lsuc o) where
   field
     ⋚ : obj
 
-open RRep ⦃ … ⦄ public
+open ⋚-Rep ⦃ … ⦄ public
 
-record RMonoid {o ℓ : Level} {obj : Set o} ⦃ products : Products obj ⦄ ⦃ rrep : RRep obj ⦄
+record RMonoid {o ℓ : Level} {obj : Set o} ⦃ products : Products obj ⦄ ⦃ rrep : ⋚-Rep obj ⦄
              (_⇨′_ : obj → obj → Set ℓ) : Set (o L.⊔ ℓ) where
 
   private infix 0 _⇨_; _⇨_ = _⇨′_
@@ -46,7 +46,7 @@ data Ty : Set where
   _`×_  : Ty → Ty → Ty
 
 expr : Setω
-expr = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ⊤ ⇨ ⋚
+expr = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : ⋚-Rep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ⊤ ⇨ ⋚
 
 ex0 : expr
 ex0 = is<
@@ -79,7 +79,7 @@ ex5 : expr
 ex5 = ⟨△⟩ ∘ (is< ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is> ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is> ▵ (⟨△⟩ ∘ (is< ▵ is<)))))))))))))
 
 
-ex6 ex7 : ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
+ex6 ex7 : ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : ⋚-Rep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
 ex6 {_} {_} {_⇨_} = step3
   where
     x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ : (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
@@ -114,7 +114,7 @@ ex7 {_} {_} {_⇨_} = ⟨△⟩ ∘ (x₀ ▵ (⟨△⟩ ∘ (x₁ ▵ (⟨△�
     x₇ = exr ∘ exr ∘ exr
 
 expr2 : Setω
-expr2 = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ((⋚ × ⋚) × (⋚ × ⋚)) ⇨ (⋚ × ⋚)
+expr2 = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : ⋚-Rep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ((⋚ × ⋚) × (⋚ × ⋚)) ⇨ (⋚ × ⋚)
 
 d₀ : expr2
 d₀ = ((⟨△⟩ ⊗ id) ∘ (id ⊗ ⟨△⟩))
@@ -153,7 +153,7 @@ module Attempt1 where
 
 --    _ : Laws.Cartesian _⇨ᶜ_ can't be proved
 
-    _ : RRep Unit
+    _ : ⋚-Rep Unit
     _ = record { ⋚ = tt }
 
     _ : RMonoid _⇨ᶜ_
@@ -265,7 +265,7 @@ module Attempt2 where
                ; exl = joinMatrix identityMatrix zeroMatrix
                ; exr = joinMatrix zeroMatrix identityMatrix
                }
-    _ : RRep ℕ
+    _ : ⋚-Rep ℕ
     _ = record { ⋚ = 1 }
 
     _ : RMonoid _⇨_
