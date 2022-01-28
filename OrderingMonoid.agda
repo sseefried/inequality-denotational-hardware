@@ -128,138 +128,84 @@ tt ⇨ᶜ tt = ℕ
 max : ℕ → ℕ → ℕ
 max x y = if x <ᵇ y then y else x
 
-module Attempt1 where
 
-  instance
-    _ : Category  _⇨ᶜ_
-    _ = record { id = 0 ; _∘_ = ℕ._+_ } -- "a monoid is a category with one object"
-    -- justification : add costs when you compose operations
+open import Data.Integer hiding (_+_; _*_)
+import Data.Integer as ℤ
+import Data.Sign as S
 
-    _ : Equivalent 0ℓ _⇨ᶜ_
-    _ = record { _≈_ = _≡_ ; equiv = isEquivalence }
+data ℤ∞ : Set where
+  -∞   : ℤ∞
+  finℤ : ℤ → ℤ∞
 
-    _ : Laws.Category  _⇨ᶜ_
-    _ = record { identityˡ = refl ; identityʳ = λ {_ _ f} → +-identityʳ f ; assoc = λ {_ _ _ _ f g h}  → +-assoc h g f   ; ∘≈ = cong₂ ℕ._+_ }
+open import Algebra.Bundles using (RawSemiring)
 
-    _ : Products Unit
-    _ = record { ⊤ = tt ; _×_ = λ _ _ → tt }
+ℤ∞-Semiring : RawSemiring 0ℓ 0ℓ
+ℤ∞-Semiring =
+  record
+    { Carrier = ℤ∞
+    ; _≈_ = _≡_
+    ; _+_ = ℤ∞-max
+    ; _*_ = _+_
+    ; 0# = -∞
+    ; 1# = finℤ 0ℤ
+    }
+  where
+    _+_ : ℤ∞ → ℤ∞ → ℤ∞
+    -∞ + _  = -∞
+    _  + -∞ = -∞
+    (finℤ m) + (finℤ n) = finℤ (m ℤ.+ n)
 
-    _ : Cartesian _⇨ᶜ_
-    _ = record { ! = 0 ; _▵_ = max ; exl = 0 ; exr = 0 }
-    -- Justification: decomposing (exl, exr) takes zero work. forking (_▵_) is the maximum work in the two branches.
+    ℤ∞-max : ℤ∞ → ℤ∞ → ℤ∞
+    ℤ∞-max -∞ b = b
+    ℤ∞-max a -∞ = a
+    ℤ∞-max (finℤ m) (finℤ n) = finℤ (m ℤ.⊔ n)
 
-    why-∀⊤-aint-true : {a b c d : Unit} → Σ (a ⇨ᶜ b) (λ a₁ → Σ (c ⇨ᶜ d) (λ a₂ → ¬ (a₁ ≈ a₂)))
-    why-∀⊤-aint-true = (0 , 1 , λ ())
+open import Matrix ℤ∞-Semiring
 
---    _ : Laws.Cartesian _⇨ᶜ_ can't be proved
+_⇨_ : ℕ → ℕ → Set
+c ⇨ r = Matrix r c
 
-    _ : ⋚-Rep Unit
-    _ = record { ⋚ = tt }
+[[-∞]] : 1 ⇨ 1
+[[-∞]] = allZero
 
-    _ : RMonoid _⇨ᶜ_
-    _ = record { is< = 0 ; is> = 0 ; is= = 0 ; ⟨▲⟩ = 1 }
-    -- Justification: Applying ⟨▲⟩ costs one unit of work. Everything else is zero
+instance
+  _ : Category {obj = ℕ} _⇨_
+  _ = record { id = identity ; _∘_ = _∙_ }
 
-  ex0′ ex1′ ex2′ ex3′ ex4′ ex5′ d₀′ d₁′ : ℕ
-  ex0′ = ex0 -- cost = 0
-  ex1′ = ex1 -- cost = 1
-  ex2′ = ex2 -- cost = 2
-  ex3′ = ex3 -- cost = 3
-  ex4′ = ex4 -- cost = 3
-  ex5′ = ex5 -- cost = 7
-  d₀′ = d₀
-  d₁′ = d₁
+  _ : Products ℕ
+  _ = record { ⊤ = 1 ; _×_ = ℕ._+_ }
 
-  _ : Set
-  _ = {! d₁′ !}
+  _ : Cartesian {obj = ℕ} _⇨_
+  _ = record { !   = zeroColumn
+             ; _▵_ = _↕_
+             ; exl = identity ↔ allZero
+             ; exr = allZero  ↔ identity
+             }
+  _ : ⋚-Rep ℕ
+  _ = record { ⋚ = 1 }
 
-module Attempt2 where
-  open import Data.Vec
-  import Data.Vec as V
-  open import Data.Integer hiding (_+_; _*_)
-  import Data.Integer as ℤ
-  import Data.Sign as S
-  open Data.Product renaming  (_×_ to _×′)
-  open import Function hiding (id; _↔_)
+  _ : RMonoid _⇨_
+  _ = record { is< = [[-∞]]
+             ; is> = [[-∞]]
+             ; is= = [[-∞]]
+             ; ⟨▲⟩ = columnOf (finℤ 1ℤ)
+             }
 
-  data ℤ∞ : Set where
-    -∞   : ℤ∞
-    finℤ : ℤ → ℤ∞
+ex0′ ex1′ ex2′ ex3′ ex4′ ex5′  : 1 ⇨ 1
+ex0′ = ex0
+ex1′ = ex1
+ex2′ = ex2
+ex3′ = ex3
+ex4′ = ex4
+ex5′ = ex5
 
-  open import Algebra.Bundles using (RawSemiring)
+ex6′ ex7′ : 8 ⇨ 1
+ex6′ = ex6
+ex7′ = ex7
 
-  ℤ∞-Semiring : RawSemiring 0ℓ 0ℓ
-  ℤ∞-Semiring =
-    record
-      { Carrier = ℤ∞
-      ; _≈_ = _≡_
-      ; _+_ = ℤ∞-max
-      ; _*_ = _+_
-      ; 0# = -∞
-      ; 1# = finℤ 0ℤ
-      }
-    where
-      _+_ : ℤ∞ → ℤ∞ → ℤ∞
-      -∞ + _  = -∞
-      _  + -∞ = -∞
-      (finℤ m) + (finℤ n) = finℤ (m ℤ.+ n)
+d₀′ d₁′ : 4 ⇨ 2
+d₀′ = d₀
+d₁′ = d₁
 
-      ℤ∞-max : ℤ∞ → ℤ∞ → ℤ∞
-      ℤ∞-max -∞ b = b
-      ℤ∞-max a -∞ = a
-      ℤ∞-max (finℤ m) (finℤ n) = finℤ (m ℤ.⊔ n)
-
-  open import Matrix ℤ∞-Semiring
-
-  _⇨_ : ℕ → ℕ → Set
-  c ⇨ r = Matrix r c
-
-  [[-∞]] : 1 ⇨ 1
-  [[-∞]] = allZero
-
-  [[0]] : 1 ⇨ 1
-  [[0]] = identity
-
-  instance
-    _ : Category {obj = ℕ} _⇨_
-    _ = record { id = identity ; _∘_ = _∙_ }
-
-    _ : Products ℕ
-    _ = record { ⊤ = 1 ; _×_ = ℕ._+_ }
-
-    _ : Cartesian {obj = ℕ} _⇨_
-    _ = record { !   = zeroColumn
-               ; _▵_ = V._++_ -- [A]
-                              -- [-]
-                              -- [B]
-               ; exl = identity ↔ allZero
-               ; exr = allZero ↔ identity
-               }
-    _ : ⋚-Rep ℕ
-    _ = record { ⋚ = 1 }
-
-    _ : RMonoid _⇨_
-    _ = record { is< = [[-∞]]
-               ; is> = [[-∞]]
-               ; is= = [[-∞]]
-               ; ⟨▲⟩ = columnOf (finℤ 1ℤ)
-               }
-
-  ex0′ ex1′ ex2′ ex3′ ex4′ ex5′  : 1 ⇨ 1
-  ex0′ = ex0
-  ex1′ = ex1
-  ex2′ = ex2
-  ex3′ = ex3
-  ex4′ = ex4
-  ex5′ = ex5
-
-  ex6′ ex7′ : 8 ⇨ 1
-  ex6′ = ex6
-  ex7′ = ex7
-
-  d₀′ d₁′ : 4 ⇨ 2
-  d₀′ = d₀
-  d₁′ = d₁
-
-  _ : Set
-  _ = {! d₀′!}
+_ : Set
+_ = {! d₀′!}

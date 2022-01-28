@@ -55,6 +55,13 @@ module Matrix (sr : RawSemiring 0ℓ 0ℓ) where
   _↔_ : {m n p : ℕ} → Matrix m n → Matrix m p → Matrix m (n ℕ.+ p)
   _↔_ = zipWith _++_
 
+  -- [A]
+  -- [-]
+  -- [B]
+
+  _↕_ : {m n p : ℕ} → Matrix m p → Matrix n p → Matrix (m ℕ.+ n) p
+  _↕_ = _++_
+
   columnOf : {n : ℕ} → A → Matrix 1 n
   columnOf a = replicate a ∷ []
 
