@@ -232,7 +232,7 @@ module Attempt2 where
 
   _∗_ : {m n p : ℕ} → Matrix ℤ∞ m n → Matrix ℤ∞ n p → Matrix ℤ∞ m p
   [] ∗ _ = []
-  _∗_ {suc m} (v₁ ∷ m₁) m₂ = V.map (λ v₂ → v₁ ∙ v₂) (V.transpose m₂) ∷ m₁ ∗ m₂
+  _∗_ {suc m} (v₁ ∷ m₁) m₂ = V.map (v₁ ∙_) (V.transpose m₂) ∷ m₁ ∗ m₂
 
   _⇨_ : ℕ → ℕ → Set
   c ⇨ r = Matrix ℤ∞ r c
