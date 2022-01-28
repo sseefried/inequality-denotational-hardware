@@ -23,7 +23,7 @@ private variable
 
 record RRep {o : Level} (obj : Set o) : Set (lsuc o) where
   field
-    ⋛ : obj
+    ⋚ : obj
 
 open RRep ⦃ … ⦄ public
 
@@ -32,21 +32,21 @@ record RMonoid {o ℓ : Level} {obj : Set o} ⦃ products : Products obj ⦄ ⦃
 
   private infix 0 _⇨_; _⇨_ = _⇨′_
   field
-    is< : ⊤ ⇨ R
-    is> : ⊤ ⇨ R
-    is= : ⊤ ⇨ R
-    ⟨△⟩ : R × R ⇨ R
+    is< : ⊤ ⇨ ⋚
+    is> : ⊤ ⇨ ⋚
+    is= : ⊤ ⇨ ⋚
+    ⟨△⟩ : ⋚ × ⋚ ⇨ ⋚
 
 open RMonoid ⦃ … ⦄ public
 
 infixr 2 _`×_
 data Ty : Set where
   `⊤    : Ty
-  `R    : Ty
+  `⋚    : Ty
   _`×_  : Ty → Ty → Ty
 
 expr : Setω
-expr = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ⊤ ⇨ R
+expr = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ⊤ ⇨ ⋚
 
 ex0 : expr
 ex0 = is<
@@ -66,7 +66,7 @@ ex3 = ⟨△⟩ ∘ (bigger ▵ smaller)
 ex4 : expr
 ex4 {_} {_} {_⇨_} = step3
   where
-    step1a step1b step1c step1d step2a step2b step3 : ⊤ ⇨ R
+    step1a step1b step1c step1d step2a step2b step3 : ⊤ ⇨ ⋚
     step1a = ⟨△⟩ ∘ (is<  ▵ is= )
     step1b = ⟨△⟩ ∘ (is>  ▵ is= )
     step1c = ⟨△⟩ ∘ (is=  ▵ is> )
@@ -79,10 +79,10 @@ ex5 : expr
 ex5 = ⟨△⟩ ∘ (is< ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is> ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is= ▵ (⟨△⟩ ∘ (is> ▵ (⟨△⟩ ∘ (is< ▵ is<)))))))))))))
 
 
-ex6 ex7 : ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → (((R × R) × (R × R)) × ((R × R) × (R × R))) ⇨ R
+ex6 ex7 : ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
 ex6 {_} {_} {_⇨_} = step3
   where
-    x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ : (((R × R) × (R × R)) × ((R × R) × (R × R))) ⇨ R
+    x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ : (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
     x₀ = exl ∘ exl ∘ exl
     x₁ = exr ∘ exl ∘ exl
     x₂ = exl ∘ exr ∘ exl
@@ -92,7 +92,7 @@ ex6 {_} {_} {_⇨_} = step3
     x₆ = exl ∘ exr ∘ exr
     x₇ = exr ∘ exr ∘ exr
 
-    step1a step1b step1c step1d step2a step2b step3 : (((R × R) × (R × R)) × ((R × R) × (R × R))) ⇨ R
+    step1a step1b step1c step1d step2a step2b step3 : (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
     step1a = ⟨△⟩ ∘ (x₀  ▵ x₁ )
     step1b = ⟨△⟩ ∘ (x₂  ▵ x₃ )
     step1c = ⟨△⟩ ∘ (x₄  ▵ x₅ )
@@ -103,7 +103,7 @@ ex6 {_} {_} {_⇨_} = step3
 
 ex7 {_} {_} {_⇨_} = ⟨△⟩ ∘ (x₀ ▵ (⟨△⟩ ∘ (x₁ ▵ (⟨△⟩ ∘ (x₂ ▵ (⟨△⟩ ∘ (x₃ ▵ (⟨△⟩ ∘ (x₄ ▵ (⟨△⟩ ∘ (x₅ ▵ (⟨△⟩ ∘ (x₆ ▵ x₇)))))))))))))
   where
-    x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ : (((R × R) × (R × R)) × ((R × R) × (R × R))) ⇨ R
+    x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ : (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
     x₀ = exl ∘ exl ∘ exl
     x₁ = exr ∘ exl ∘ exl
     x₂ = exl ∘ exr ∘ exl
@@ -114,7 +114,7 @@ ex7 {_} {_} {_⇨_} = ⟨△⟩ ∘ (x₀ ▵ (⟨△⟩ ∘ (x₁ ▵ (⟨△�
     x₇ = exr ∘ exr ∘ exr
 
 expr2 : Setω
-expr2 = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ((R × R) × (R × R)) ⇨ (R × R)
+expr2 = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : RRep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ((⋚ × ⋚) × (⋚ × ⋚)) ⇨ (⋚ × ⋚)
 
 d₀ : expr2
 d₀ = ((⟨△⟩ ⊗ id) ∘ (id ⊗ ⟨△⟩))
@@ -266,7 +266,7 @@ module Attempt2 where
                ; exr = joinMatrix zeroMatrix identityMatrix
                }
     _ : RRep ℕ
-    _ = record { R = 1 }
+    _ = record { ⋚ = 1 }
 
     _ : RMonoid _⇨_
     _ = record { is< = [[-∞]]
