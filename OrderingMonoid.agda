@@ -212,17 +212,17 @@ module Attempt2 where
   open import Matrix ℤ∞-Semiring
 
   _⇨_ : ℕ → ℕ → Set
-  c ⇨ r = Matrix ℤ∞ r c -- TODO: Remove need for ℤ∞
+  c ⇨ r = Matrix r c
 
   [[-∞]] : 1 ⇨ 1
-  [[-∞]] = zeroMatrix
+  [[-∞]] = allZero
 
   [[0]] : 1 ⇨ 1
-  [[0]] = identityMatrix
+  [[0]] = identity
 
   instance
     _ : Category {obj = ℕ} _⇨_
-    _ = record { id = identityMatrix ; _∘_ = _⨉_ }
+    _ = record { id = identity ; _∘_ = _⨉_ }
 
     _ : Products ℕ
     _ = record { ⊤ = 1 ; _×_ = ℕ._+_ }
@@ -232,8 +232,8 @@ module Attempt2 where
                ; _▵_ = V._++_ -- [A]
                               -- [-]
                               -- [B]
-               ; exl = identityMatrix ↔ zeroMatrix
-               ; exr = zeroMatrix ↔ identityMatrix
+               ; exl = identity ↔ allZero
+               ; exr = allZero ↔ identity
                }
     _ : ⋚-Rep ℕ
     _ = record { ⋚ = 1 }
