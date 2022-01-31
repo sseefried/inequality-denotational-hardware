@@ -1,15 +1,14 @@
 module OrderingMonoid where
 
 import Level as L
-open import Data.Bool
-open import Data.Nat hiding (_⊔_;_+_;_*_)
-open import Data.Nat.Properties
+open import Data.Bool hiding (_≤_)
+open import Data.Nat hiding (_⊔_;_+_;_*_;_≤_;_≥_)
 import Data.Nat as ℕ
 import Data.Nat.Properties as ℕ
 open import Categorical.Raw
 open import Categorical.Equiv hiding (refl)
 open import Functions hiding (tt ; if_then_else_)
-open import Data.Unit renaming (⊤ to Unit)
+open import Data.Unit renaming (⊤ to Unit) hiding (_≤_)
 import Categorical.Laws as Laws
 open import Relation.Binary.PropositionalEquality
 open import Data.Product using (Σ; _,_) renaming (_×_ to _×′_)
@@ -27,7 +26,7 @@ record ⋚-Rep {o : Level} (obj : Set o) : Set (lsuc o) where
 
 open ⋚-Rep ⦃ … ⦄ public
 
-record RMonoid {o ℓ : Level} {obj : Set o} ⦃ products : Products obj ⦄ ⦃ rrep : ⋚-Rep obj ⦄
+record ⋚-Monoid {o ℓ : Level} {obj : Set o} ⦃ products : Products obj ⦄ ⦃ rrep : ⋚-Rep obj ⦄
              (_⇨′_ : obj → obj → Set ℓ) : Set (o L.⊔ ℓ) where
 
   private infix 0 _⇨_; _⇨_ = _⇨′_
@@ -37,7 +36,7 @@ record RMonoid {o ℓ : Level} {obj : Set o} ⦃ products : Products obj ⦄ ⦃
     is= : ⊤ ⇨ ⋚
     ⟨▲⟩ : ⋚ × ⋚ ⇨ ⋚
 
-open RMonoid ⦃ … ⦄ public
+open ⋚-Monoid ⦃ … ⦄ public
 
 infixr 2 _`×_
 data Ty : Set where
@@ -49,7 +48,7 @@ data Ty : Set where
 module Examples where
 
   expr : Setω
-  expr = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : ⋚-Rep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ⊤ ⇨ ⋚
+  expr = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : ⋚-Rep obj ⦄ ⦃ _ : ⋚-Monoid _⇨_ ⦄ → ⊤ ⇨ ⋚
 
   ex0 : expr
   ex0 = is<
@@ -82,7 +81,7 @@ module Examples where
   ex5 = ⟨▲⟩ ∘ (is< ▵ (⟨▲⟩ ∘ (is= ▵ (⟨▲⟩ ∘ (is> ▵ (⟨▲⟩ ∘ (is= ▵ (⟨▲⟩ ∘ (is= ▵ (⟨▲⟩ ∘ (is> ▵ (⟨▲⟩ ∘ (is< ▵ is<)))))))))))))
 
 
-  ex6 ex7 : ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : ⋚-Rep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
+  ex6 ex7 : ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : ⋚-Rep obj ⦄ ⦃ _ : ⋚-Monoid _⇨_ ⦄ → (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
   ex6 {_} {_} {_⇨_} = step3
     where
       x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ : (((⋚ × ⋚) × (⋚ × ⋚)) × ((⋚ × ⋚) × (⋚ × ⋚))) ⇨ ⋚
@@ -117,7 +116,7 @@ module Examples where
       x₇ = exr ∘ exr ∘ exr
 
   expr2 : Setω
-  expr2 = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : ⋚-Rep obj ⦄ ⦃ _ : RMonoid _⇨_ ⦄ → ((⋚ × ⋚) × (⋚ × ⋚)) ⇨ (⋚ × ⋚)
+  expr2 = ∀ {o : Level} {obj : Set o} {_⇨_ : obj → obj → Set o} → ⦃ _ : Category _⇨_ ⦄ ⦃ _ : Products obj ⦄ ⦃ _ : Cartesian _⇨_ ⦄ ⦃ _ : ⋚-Rep obj ⦄ ⦃ _ : ⋚-Monoid _⇨_ ⦄ → ((⋚ × ⋚) × (⋚ × ⋚)) ⇨ (⋚ × ⋚)
 
   d₀ : expr2
   d₀ = ((⟨▲⟩ ⊗ id) ∘ (id ⊗ ⟨▲⟩))
@@ -126,8 +125,9 @@ module Examples where
   d₁ = ((⟨▲⟩ ∘ id) ⊗ (id ∘ ⟨▲⟩))
 
 
-open import Data.Integer hiding (_+_; _*_)
+open import Data.Integer hiding (_+_; _*_;_≤_;_⊔_;_≥_)
 import Data.Integer as ℤ
+import Data.Integer.Properties as ℤ
 import Data.Sign as S
 
 data ℤ∞ : Set where
@@ -136,12 +136,17 @@ data ℤ∞ : Set where
 
 open import Algebra.Bundles using (RawSemiring)
 
+_⊔_ : ℤ∞ → ℤ∞ → ℤ∞
+-∞ ⊔ b = b
+a ⊔ -∞ = a
+finℤ m ⊔ finℤ n = finℤ (m ℤ.⊔ n)
+
 ℤ∞-Semiring : RawSemiring 0ℓ 0ℓ
 ℤ∞-Semiring =
   record
     { Carrier = ℤ∞
     ; _≈_ = _≡_
-    ; _+_ = ℤ∞-max
+    ; _+_ = _⊔_
     ; _*_ = _+_
     ; 0# = -∞
     ; 1# = finℤ 0ℤ
@@ -151,11 +156,6 @@ open import Algebra.Bundles using (RawSemiring)
     -∞ + _  = -∞
     _  + -∞ = -∞
     (finℤ m) + (finℤ n) = finℤ (m ℤ.+ n)
-
-    ℤ∞-max : ℤ∞ → ℤ∞ → ℤ∞
-    ℤ∞-max -∞ b = b
-    ℤ∞-max a -∞ = a
-    ℤ∞-max (finℤ m) (finℤ n) = finℤ (m ℤ.⊔ n)
 
 open import Matrix ℤ∞-Semiring
 
@@ -174,14 +174,14 @@ instance
 
   _ : Cartesian {obj = ℕ} _⇨_
   _ = record { !   = zeroColumn
-             ; _▵_ = _↕_
-             ; exl = identity ↔ allZero
-             ; exr = allZero  ↔ identity
+             ; _▵_ = _↔_
+             ; exl = identity ↕ allZero
+             ; exr = allZero  ↕ identity
              }
   _ : ⋚-Rep ℕ
   _ = record { ⋚ = 1 }
 
-  _ : RMonoid _⇨_
+  _ : ⋚-Monoid _⇨_
   _ = record { is< = [[-∞]]
              ; is> = [[-∞]]
              ; is= = [[-∞]]
@@ -208,7 +208,7 @@ module Examples′ where
   d₁′ = d₁
 
   _ : Set
-  _ = {! d₀′!}
+  _ = {! ex6′!}
 
 
 --
@@ -218,44 +218,25 @@ module Examples′ where
 data PT (A : Set) : ℕ → Set where
    nil  : PT A 0
    leaf : A → PT A 0
-   fork : {n : ℕ} → A ×′ PT A n ×′ PT A n → PT A (ℕ.suc n)
-
-
-pt1 : PT ℕ 0
-pt1 = leaf 1
-
---
---      1
---    2   3
---  4  5  . .
-
-pt5 : PT ℕ 2
-pt5 = fork (1 , fork (2 , leaf 4 , leaf 5) , fork (3 , nil , nil))
+   fork : {n : ℕ} → PT A n ×′ PT A n → PT A (ℕ.suc n)
 
 
 --
---      1
---    2   3
---  4  5  6 .
-pt6 : PT ℕ 2
-pt6 = fork (1 , fork (2 , leaf 4 , leaf 5) , fork (3 , leaf 6 , nil))
+--      .
+--    .   .
+--  1  2  3 .
 
---
---      1
---    2   3
---  4  5  6 7
-pt7 : PT ℕ 2
-pt7 = fork (1 , fork (2 , leaf 4 , leaf 5) , fork (3 , leaf 6 , leaf 7))
+pt3 : PT ℕ 2
+pt3 = fork (fork (leaf 1 , leaf 2) , fork ( leaf 3 , nil))
 
 
---
---        1
---    2      3
---  4   5   6   7
--- 8 . . . . . . .
-pt8 : PT ℕ 3
-pt8 = fork (1 , fork (2 , fork (4 , leaf 8 , nil) , fork (5 , nil , nil))
-              , fork (3 , fork (6 , nil    , nil) , fork (7 , nil , nil)))
+--          .
+--       .    .
+--    .     .    .
+--  1  2  3  4  5
+pt5 : PT ℕ 3
+pt5 = fork ( fork (fork (leaf 1 , leaf 2) , fork (leaf 3 , leaf 4))
+           , fork (fork (leaf 5 , nil   ) , fork (nil , nil)))
 
 --
 -- Now a function to map an arbitrary length list to a Perfect Tree
@@ -284,12 +265,12 @@ _ = {!⌊log₂ 1 ⌋!}
 --splitHalf (a ∷ []) = [] , []
 --splitHalf (a ∷ as) =
 
-toPT : {A : Set} {n : ℕ} → Vec A n → PT A ⌊log₂ n ⌋
-toPT []       =  nil
-toPT (a ∷ []) = leaf a
-toPT {n = suc (suc  n)} (a ∷ as) =
-  let (as₁ , as₂) = split as
-  in fork (a , ? , ? )
+--toPT : {A : Set} {n : ℕ} → Vec A n → PT A ⌊log₂ n ⌋
+--toPT []       =  nil
+--toPT (a ∷ []) = leaf a
+--toPT {n = suc (suc  n)} (a ∷ as) =
+--  let (as₁ , as₂) = split as
+--  in fork (a , ? , ? )
 
 {-
 
@@ -304,4 +285,122 @@ toPT {n = suc (suc  n)} (a ∷ as) =
 
 
 
+-}
+
+maxMat : {m n : ℕ} → Matrix m n → ℤ∞
+maxMat m = vecMax (map vecMax m)
+  where
+    vecMax : {n : ℕ} → Vec ℤ∞ n → ℤ∞
+    vecMax = foldl _ _⊔_ -∞
+
+combine′ : {n : ℕ} → PT (1 ⇨ 1) n → (2 ^ n) ⇨ 1
+combine′ = go
+  where
+    extract : (1 ⇨ 1) → ℤ∞
+    extract ((a ∷ []) ∷ []) = a
+    go : {n : ℕ} → PT (1 ⇨ 1) n → (2 ^ n) ⇨ 1
+    go nil =  columnOf -∞
+    go (leaf a) = columnOf (extract a)
+    go {suc n} (fork (pt1 , pt2)) rewrite ℕ.*-identityˡ (2 ^ n) =
+      let (a , b) = (go pt1 , go pt2)
+      in a ↕ b
+
+extract : (1 ⇨ 1) → ℤ∞
+extract ((a ∷ []) ∷ []) = a
+
+combine : {n : ℕ} → PT (1 ⇨ 1) n → 1 ⇨ 1
+combine = go
+  where
+
+    go : {n : ℕ} → PT (1 ⇨ 1) n → 1 ⇨ 1
+    go nil =  columnOf -∞
+    go (leaf a) = columnOf (extract a)
+    go {suc n} (fork (pt1 , pt2)) =
+      let (a , b) = (go pt1 , go pt2)
+      in ⟨▲⟩ ∘ (a ▵ b)
+
+ℤ⁺[_] : ℕ → ℤ
+ℤ⁺[ n ] = S.+ ◃ n
+
+data _≤_ : ℤ∞ → ℤ∞ → Set where
+  -∞≤x       : {x : ℤ∞}           →  -∞       ≤  x
+  finℤ≤finℤ  : {x y : ℤ} → x ℤ.≤ y → (finℤ x) ≤ (finℤ y)
+
+_≥_ : ℤ∞ → ℤ∞ → Set
+a ≥ b = b ≤ a
+
+data T1 : Set where
+  mkT1 : T1
+
+comb′ : {n : ℕ} → PT T1 n → ℕ
+comb′ nil                = 0
+comb′ (leaf _)           = 0
+comb′ (fork (pt₁ , pt₂)) = ℕ.suc (comb′ pt₁ ℕ.⊔ comb′ pt₂)
+
+thm′ : {n : ℕ} → (pt : PT T1 n) → comb′ pt ℕ.≤ n
+thm′ nil                = z≤n
+thm′ (leaf _)           = z≤n
+thm′ (fork (pt1 , pt2)) = s≤s (ℕ.⊔-lub (thm′ pt1) (thm′ pt2))
+
+open import Relation.Binary.Bundles
+open import Algebra.Construct.NaturalChoice.Base
+open import Relation.Binary.Definitions
+open import Relation.Binary.Structures
+open import Data.Sum
+import Data.Sum as Sum
+
+≤-isPreorder : IsPreorder _≡_ _≤_
+≤-isPreorder = {!!}
+
+
+≤-total : Total _≤_
+≤-total -∞ _ = inj₁ -∞≤x
+≤-total _ -∞ = inj₂ -∞≤x
+≤-total (finℤ i) (finℤ j) = Sum.map finℤ≤finℤ finℤ≤finℤ (ℤ.≤-total i j)
+
+≤-isTotalPreorder : IsTotalPreorder _≡_ _≤_
+≤-isTotalPreorder = record
+  { isPreorder = ≤-isPreorder
+  ; total = ≤-total
+  }
+
+≤-totalPreorder : TotalPreorder 0ℓ 0ℓ 0ℓ
+≤-totalPreorder = record
+  { isTotalPreorder = ≤-isTotalPreorder
+  }
+
+i≤j⇒i⊔j≡j : {i j : ℤ∞} → i ≤ j → i ⊔ j ≡ j
+i≤j⇒i⊔j≡j -∞≤x             = refl
+i≤j⇒i⊔j≡j (finℤ≤finℤ x≤y)  = cong finℤ (ℤ.i≤j⇒i⊔j≡j x≤y)
+
+⊔-comm : (i j : ℤ∞) → i ⊔ j ≡ j ⊔ i
+⊔-comm -∞       -∞       = refl
+⊔-comm -∞       (finℤ j) = refl
+⊔-comm (finℤ i) -∞       = refl
+⊔-comm (finℤ i) (finℤ j) = cong finℤ (ℤ.⊔-comm i j)
+
+
+i≥j⇒i⊔j≡i : {i j : ℤ∞} → i ≥ j → i ⊔ j ≡ i
+i≥j⇒i⊔j≡i {i} {j} i≤j rewrite ⊔-comm i j = i≤j⇒i⊔j≡j {j} {i} i≤j
+
+
+⊔-operator : MaxOperator ≤-totalPreorder
+⊔-operator = record
+  { _⊔_ = _⊔_
+  ; x≤y⇒x⊔y≈y = i≤j⇒i⊔j≡j
+  ; x≥y⇒x⊔y≈x = i≥j⇒i⊔j≡i
+  }
+
+
+
+
+{-comb2 : {n : ℕ} → PT T1 n → (1 ⇨ 1)
+comb2 nil                = [[-∞]]
+comb2 (leaf _)           = columnOf (finℤ 0ℤ)
+comb2 (fork (pt₁ , pt₂)) = ℕ.suc (comb′ pt₁ ℕ.⊔ comb′ pt₂)
+
+thm2 : {n : ℕ} → (pt : PT T1 n) → comb′ pt ℕ.≤ n
+thm2 nil                = z≤n
+thm2 (leaf _)           = z≤n
+thm2 (fork (pt1 , pt2)) = s≤s (⊔-lub (thm′ pt1) (thm′ pt2))
 -}
