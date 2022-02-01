@@ -9,23 +9,22 @@ module Matrix (s : RawSemiring 0ℓ 0ℓ) where
   open import Relation.Nullary
   open import Relation.Binary.PropositionalEquality
 
-  open RawSemiring ⦃ … ⦄ public renaming (Carrier to A)
-
+  open RawSemiring ⦃ … ⦄ renaming (Carrier to A)
   private
     MatrixPoly : Set → ℕ → ℕ → Set
     MatrixPoly A m n = Vec (Vec A n) m
 
-  instance
-    _ : RawSemiring 0ℓ 0ℓ
-    _ = s
+    instance
+      _ : RawSemiring 0ℓ 0ℓ
+      _ = s
 
   Matrix : ℕ → ℕ → Set
   Matrix = MatrixPoly A
 
-  private
-    _·_ : {n : ℕ} → Vec A n → Vec A n → A
-    _·_ {n} v₁ v₂ = foldl _ _+_ 0# (zipWith _*_ v₁ v₂)
+  _·_ : {n : ℕ} → Vec A n → Vec A n → A
+  _·_ {n} v₁ v₂ = foldl _ _+_ 0# (zipWith _*_ v₁ v₂)
 
+  private
     cross : ∀ {A} {m n : ℕ} → Vec A m → Vec A n → MatrixPoly (A × A) m n
     cross {m = zero} _ _ = []
     cross {m = suc m} (x₁ ∷ x₁s) x₂s =  (map (λ x₂ → (x₁ , x₂)) x₂s) ∷ cross x₁s x₂s
@@ -61,8 +60,8 @@ module Matrix (s : RawSemiring 0ℓ 0ℓ) where
   _↔_ : {m n p : ℕ} → Matrix m p → Matrix n p → Matrix (m ℕ.+ n) p
   _↔_ = _++_
 
-  columnOf : {n : ℕ} → A → Matrix 1 n
-  columnOf a = replicate a ∷ []
+  rowOf : {n : ℕ} → A → Matrix 1 n
+  rowOf a = replicate a ∷ []
 
-  zeroColumn : {n : ℕ} → Matrix 1 n
-  zeroColumn = replicate 0# ∷ []
+  zeroRow : {n : ℕ} → Matrix 1 n
+  zeroRow = replicate 0# ∷ []

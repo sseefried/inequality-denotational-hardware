@@ -2,7 +2,7 @@ module OrderingMonoid where
 
 import Level as L
 open import Data.Bool hiding (_≤_)
-open import Data.Nat hiding (_⊔_;_+_;_*_;_≤_;_≥_)
+open import Data.Nat hiding (_⊔_;_+_;_*_;_≤_;_≥_; suc)
 import Data.Nat as ℕ
 import Data.Nat.Properties as ℕ
 open import Categorical.Raw
@@ -125,21 +125,28 @@ module Examples where
   d₁ = ((⟨▲⟩ ∘ id) ⊗ (id ∘ ⟨▲⟩))
 
 
-open import Data.Integer hiding (_+_; _*_;_≤_;_⊔_;_≥_)
+open import Data.Integer hiding (_+_; _*_;_≤_;_⊔_;_≥_; suc)
 import Data.Integer as ℤ
 import Data.Integer.Properties as ℤ
 import Data.Sign as S
 
 data ℤ∞ : Set where
-  -∞   : ℤ∞
-  finℤ : ℤ → ℤ∞
+  -∞ : ℤ∞
+  ℤᶠ : ℤ → ℤ∞
 
 open import Algebra.Bundles using (RawSemiring)
 
+infixl 7 _⊔_
 _⊔_ : ℤ∞ → ℤ∞ → ℤ∞
 -∞ ⊔ b = b
 a ⊔ -∞ = a
-finℤ m ⊔ finℤ n = finℤ (m ℤ.⊔ n)
+ℤᶠ m ⊔ ℤᶠ n = ℤᶠ (m ℤ.⊔ n)
+
+infixl 6 _+_
+_+_ : ℤ∞ → ℤ∞ → ℤ∞
+-∞ + _  = -∞
+_  + -∞ = -∞
+(ℤᶠ m) + (ℤᶠ n) = ℤᶠ (m ℤ.+ n)
 
 ℤ∞-Semiring : RawSemiring 0ℓ 0ℓ
 ℤ∞-Semiring =
@@ -149,13 +156,13 @@ finℤ m ⊔ finℤ n = finℤ (m ℤ.⊔ n)
     ; _+_ = _⊔_
     ; _*_ = _+_
     ; 0# = -∞
-    ; 1# = finℤ 0ℤ
+    ; 1# = ℤᶠ 0ℤ
     }
-  where
-    _+_ : ℤ∞ → ℤ∞ → ℤ∞
-    -∞ + _  = -∞
-    _  + -∞ = -∞
-    (finℤ m) + (finℤ n) = finℤ (m ℤ.+ n)
+
+
+suc : ℤ∞ → ℤ∞
+suc -∞ = -∞
+suc (ℤᶠ n) = ℤᶠ (ℤ.suc n)
 
 open import Matrix ℤ∞-Semiring
 
@@ -173,7 +180,7 @@ instance
   _ = record { ⊤ = 1 ; _×_ = ℕ._+_ }
 
   _ : Cartesian {obj = ℕ} _⇨_
-  _ = record { !   = zeroColumn
+  _ = record { !   = zeroRow
              ; _▵_ = _↔_
              ; exl = identity ↕ allZero
              ; exr = allZero  ↕ identity
@@ -185,7 +192,7 @@ instance
   _ = record { is< = [[-∞]]
              ; is> = [[-∞]]
              ; is= = [[-∞]]
-             ; ⟨▲⟩ = columnOf (finℤ 1ℤ)
+             ; ⟨▲⟩ = rowOf (ℤᶠ 1ℤ)
              }
 
 module Examples′ where
@@ -238,39 +245,7 @@ pt5 : PT ℕ 3
 pt5 = fork ( fork (fork (leaf 1 , leaf 2) , fork (leaf 3 , leaf 4))
            , fork (fork (leaf 5 , nil   ) , fork (nil , nil)))
 
---
--- Now a function to map an arbitrary length list to a Perfect Tree
---
 
-import Data.Bin as Bin
-open import Data.Vec
-
-⌊log₂_⌋ : ℕ → ℕ
-⌊log₂ n ⌋  = lg (fromℕ n)
-  where
-    open Bin
-    lg : Bin → ℕ
-    lg 0# = 0
-    lg  (b⁺ 1#) = Bin.⌊log₂ b⁺ ⌋
-
-_ : ℕ
-_ = {!⌊log₂ 1 ⌋!}
-
---data P : Set where
---  P1 : {n : ℕ} → n ≡ ⌊ n /2⌋ ℕ.+ ⌊ n /2⌋
---  P2 : {n : ℕ} → n ≡ ⌊ n /2⌋ ℕ.+ ⌊ n /2⌋ + 1
-
-
---splitHalf : {A : Set} {n : ℕ} → Vec A (ℕ.suc n) → Vec A ⌊ n /2⌋ ×′ Vec A ⌊ n /2⌋
---splitHalf (a ∷ []) = [] , []
---splitHalf (a ∷ as) =
-
---toPT : {A : Set} {n : ℕ} → Vec A n → PT A ⌊log₂ n ⌋
---toPT []       =  nil
---toPT (a ∷ []) = leaf a
---toPT {n = suc (suc  n)} (a ∷ as) =
---  let (as₁ , as₂) = split as
---  in fork (a , ? , ? )
 
 {-
 
@@ -287,44 +262,48 @@ _ = {!⌊log₂ 1 ⌋!}
 
 -}
 
+open import Data.Vec
+
 maxMat : {m n : ℕ} → Matrix m n → ℤ∞
 maxMat m = vecMax (map vecMax m)
   where
     vecMax : {n : ℕ} → Vec ℤ∞ n → ℤ∞
     vecMax = foldl _ _⊔_ -∞
 
+extract : (1 ⇨ 1) → ℤ∞
+extract ((a ∷ []) ∷ []) = a
+
 combine′ : {n : ℕ} → PT (1 ⇨ 1) n → (2 ^ n) ⇨ 1
 combine′ = go
   where
-    extract : (1 ⇨ 1) → ℤ∞
-    extract ((a ∷ []) ∷ []) = a
+
     go : {n : ℕ} → PT (1 ⇨ 1) n → (2 ^ n) ⇨ 1
-    go nil =  columnOf -∞
-    go (leaf a) = columnOf (extract a)
-    go {suc n} (fork (pt1 , pt2)) rewrite ℕ.*-identityˡ (2 ^ n) =
+    go nil =  rowOf -∞
+    go (leaf a) = rowOf (extract a)
+    go {ℕ.suc n} (fork (pt1 , pt2)) rewrite ℕ.*-identityˡ (2 ^ n) =
       let (a , b) = (go pt1 , go pt2)
       in a ↕ b
-
-extract : (1 ⇨ 1) → ℤ∞
-extract ((a ∷ []) ∷ []) = a
 
 combine : {n : ℕ} → PT (1 ⇨ 1) n → 1 ⇨ 1
 combine = go
   where
 
     go : {n : ℕ} → PT (1 ⇨ 1) n → 1 ⇨ 1
-    go nil =  columnOf -∞
-    go (leaf a) = columnOf (extract a)
-    go {suc n} (fork (pt1 , pt2)) =
+    go nil =  rowOf -∞
+    go (leaf a) = rowOf (extract a)
+    go {ℕ.suc n} (fork (pt1 , pt2)) =
       let (a , b) = (go pt1 , go pt2)
       in ⟨▲⟩ ∘ (a ▵ b)
 
 ℤ⁺[_] : ℕ → ℤ
 ℤ⁺[ n ] = S.+ ◃ n
 
+ℤ∞⁺[_] : ℕ → ℤ∞
+ℤ∞⁺[ n ] = ℤᶠ (S.+ ◃ n)
+
 data _≤_ : ℤ∞ → ℤ∞ → Set where
   -∞≤x       : {x : ℤ∞}           →  -∞       ≤  x
-  finℤ≤finℤ  : {x y : ℤ} → x ℤ.≤ y → (finℤ x) ≤ (finℤ y)
+  ℤᶠ≤ℤᶠ  : {x y : ℤ} → x ℤ.≤ y → (ℤᶠ x) ≤ (ℤᶠ y)
 
 _≥_ : ℤ∞ → ℤ∞ → Set
 a ≥ b = b ≤ a
@@ -342,7 +321,7 @@ thm′ nil                = z≤n
 thm′ (leaf _)           = z≤n
 thm′ (fork (pt1 , pt2)) = s≤s (ℕ.⊔-lub (thm′ pt1) (thm′ pt2))
 
-open import Relation.Binary.Bundles
+open import Relation.Binary.Bundles using (TotalPreorder)
 open import Algebra.Construct.NaturalChoice.Base
 open import Relation.Binary.Definitions
 open import Relation.Binary.Structures
@@ -356,7 +335,7 @@ import Data.Sum as Sum
 ≤-total : Total _≤_
 ≤-total -∞ _ = inj₁ -∞≤x
 ≤-total _ -∞ = inj₂ -∞≤x
-≤-total (finℤ i) (finℤ j) = Sum.map finℤ≤finℤ finℤ≤finℤ (ℤ.≤-total i j)
+≤-total (ℤᶠ i) (ℤᶠ j) = Sum.map ℤᶠ≤ℤᶠ ℤᶠ≤ℤᶠ (ℤ.≤-total i j)
 
 ≤-isTotalPreorder : IsTotalPreorder _≡_ _≤_
 ≤-isTotalPreorder = record
@@ -371,13 +350,13 @@ import Data.Sum as Sum
 
 i≤j⇒i⊔j≡j : {i j : ℤ∞} → i ≤ j → i ⊔ j ≡ j
 i≤j⇒i⊔j≡j -∞≤x             = refl
-i≤j⇒i⊔j≡j (finℤ≤finℤ x≤y)  = cong finℤ (ℤ.i≤j⇒i⊔j≡j x≤y)
+i≤j⇒i⊔j≡j (ℤᶠ≤ℤᶠ x≤y)  = cong ℤᶠ (ℤ.i≤j⇒i⊔j≡j x≤y)
 
 ⊔-comm : (i j : ℤ∞) → i ⊔ j ≡ j ⊔ i
 ⊔-comm -∞       -∞       = refl
-⊔-comm -∞       (finℤ j) = refl
-⊔-comm (finℤ i) -∞       = refl
-⊔-comm (finℤ i) (finℤ j) = cong finℤ (ℤ.⊔-comm i j)
+⊔-comm -∞       (ℤᶠ j) = refl
+⊔-comm (ℤᶠ i) -∞       = refl
+⊔-comm (ℤᶠ i) (ℤᶠ j) = cong ℤᶠ (ℤ.⊔-comm i j)
 
 
 i≥j⇒i⊔j≡i : {i j : ℤ∞} → i ≥ j → i ⊔ j ≡ i
@@ -391,16 +370,87 @@ i≥j⇒i⊔j≡i {i} {j} i≤j rewrite ⊔-comm i j = i≤j⇒i⊔j≡j {j} {i}
   ; x≥y⇒x⊔y≈x = i≥j⇒i⊔j≡i
   }
 
+open import Algebra.Construct.NaturalChoice.MaxOp ⊔-operator using (⊔-lub)
 
 
-
-{-comb2 : {n : ℕ} → PT T1 n → (1 ⇨ 1)
+comb2 : {n : ℕ} → PT T1 n → (1 ⇨ 1)
 comb2 nil                = [[-∞]]
-comb2 (leaf _)           = columnOf (finℤ 0ℤ)
-comb2 (fork (pt₁ , pt₂)) = ℕ.suc (comb′ pt₁ ℕ.⊔ comb′ pt₂)
+comb2 (leaf _)           = rowOf (ℤᶠ 0ℤ)
+comb2 (fork (pt₁ , pt₂)) = ⟨▲⟩ ∘ (comb2 pt₁ ▵ comb2 pt₂)
 
-thm2 : {n : ℕ} → (pt : PT T1 n) → comb′ pt ℕ.≤ n
-thm2 nil                = z≤n
-thm2 (leaf _)           = z≤n
-thm2 (fork (pt1 , pt2)) = s≤s (⊔-lub (thm′ pt1) (thm′ pt2))
--}
+foo : {n : ℕ} {c₁ c₂ : 1 ⇨ 1}
+    → (pf₁ : extract c₁ ≤ ℤ∞⁺[ n ])
+    → (pf₂ : extract c₂ ≤ ℤ∞⁺[ n ])
+    →  extract (⟨▲⟩ ∘ (c₁ ▵ c₂)) ≤ ℤ∞⁺[ ℕ.suc n ]
+foo pf₁ pf₂ = {!!}
+
+
+thm2 : {n : ℕ} → (pt : PT T1 n) → extract (comb2 pt) ≤ ℤ∞⁺[ n ]
+thm2 nil                = -∞≤x
+thm2 (leaf a)           = ℤᶠ≤ℤᶠ (+≤+ z≤n)
+thm2 {n} (fork (pt1 , pt2)) =
+  let (a , b) = (thm2 pt1 , thm2 pt2)
+  in foo {c₁ = comb2 pt1} a b
+
+----
+
+⊔-vec : {n : ℕ} → Vec ℤ∞ n → ℤ∞
+⊔-vec = foldl _ _⊔_ -∞
+
+dot-max : {n : ℕ} (z : ℤ∞) (v : Vec ℤ∞ n) → replicate z · v ≡ z + ⊔-vec v
+dot-max -∞ []      = refl
+dot-max (ℤᶠ _) []  = refl
+dot-max {n = ℕ.suc n} -∞ (a ∷ as) =
+    begin
+      replicate -∞ · (a ∷ as)
+    ≡⟨⟩
+      (-∞ ∷ replicate -∞) · (a ∷ as)
+    ≡⟨⟩
+      foldl _ _⊔_ -∞ (zipWith _+_ (-∞ ∷ replicate -∞) (a ∷ as))
+    ≡⟨⟩
+      foldl _ _⊔_ -∞ (-∞ + a ∷ zipWith _+_ (replicate -∞) as)
+    ≡⟨⟩
+      foldl _ _⊔_ (-∞ + (-∞ + a)) (zipWith _+_ (replicate -∞) as)
+    ≡⟨⟩
+      foldl _ _⊔_ -∞ (zipWith _+_ (replicate -∞) as)
+    ≡⟨⟩
+      replicate -∞ · as
+    ≡⟨ dot-max {n} -∞ as ⟩
+      -∞ + ⊔-vec as
+    ≡⟨⟩
+      -∞
+    ≡⟨⟩
+      -∞ + ⊔-vec (a ∷ as)
+    ∎
+  where
+    open ≡-Reasoning
+dot-max {n = ℕ.suc n} zf@(ℤᶠ z) (a ∷ as) =
+    begin
+      replicate zf · (a ∷ as)
+    ≡⟨⟩
+      (zf ∷ replicate zf) · (a ∷ as)
+    ≡⟨⟩
+      foldl _ _⊔_ -∞ (zipWith _+_ (zf ∷ replicate zf) (a ∷ as))
+    ≡⟨⟩
+      foldl _ _⊔_ -∞ (zf + a ∷ zipWith _+_ (replicate zf) as)
+    ≡⟨⟩
+      foldl _ _⊔_ (zf + a) (zipWith _+_ (replicate zf) as)
+    ≡⟨ {!!} ⟩ -- monoidal fold property
+      (zf + a) ⊔ (foldl _ _⊔_ -∞ (zipWith _+_ (replicate zf) as))
+    ≡⟨⟩
+      (zf + a) ⊔ (replicate zf · as)
+    ≡⟨ cong (λ □ → (zf + a) ⊔ □) (dot-max {n} zf as) ⟩
+      (zf + a) ⊔ (zf + ⊔-vec as) -- (zf * a) + (zf * ⊔-vec as)
+    ≡⟨ {!!} ⟩ -- ⊔-distribˡ-+  or -- *-distribˡ-+
+      zf + (a ⊔ ⊔-vec as)
+    ≡⟨⟩
+      zf + (a ⊔ foldl _ _⊔_ -∞ as)
+    ≡⟨⟩
+      zf + (a ⊔ foldl _ _⊔_ -∞ as)
+    ≡⟨ {!!} ⟩ -- monoidal fold property
+      zf + (foldl _ _⊔_ -∞ (a ∷ as))
+    ≡⟨⟩
+      zf + (⊔-vec (a ∷ as))
+    ∎
+  where
+    open ≡-Reasoning
