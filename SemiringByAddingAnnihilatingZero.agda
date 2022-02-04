@@ -1,4 +1,4 @@
-module PlusAnnihilator {a} (A : Set a) where
+module SemiringByAddingAnnihilatingZero {a} (A : Set a) where
 
 open import Level
 
