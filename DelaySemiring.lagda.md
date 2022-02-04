@@ -119,71 +119,27 @@ We can see this by defining the delays `IA = -∞` and `IB = `-∞` and
 calculating what the delay `IC`. `IC = max(IA + AC, IB + BC) = max (-∞
 + AC, -∞ + BC) = -∞`.
 
-<p!--
+<!--
 ```
 module DelaySemiring where
 
-open import Data.Nat using (ℕ)
-import Data.Nat as ℕ
-open import HasAlgebra
+-- introduce HasSemiring ℕ+⁻∞ instance into scope
+module _ where
+  open import Data.Nat
+  open import Data.Nat.Properties
+  open import Relation.Binary.PropositionalEquality using (_≡_)
+  open import Algebra.Structures {A = ℕ} _≡_
+  open import Algebra.Definitions {A = ℕ} _≡_
 
+  instance
+    isDistrib : _*_ DistributesOver _+_
+    isDistrib = *-distrib-+
+
+    isCommutativeSemigroup : IsCommutativeSemigroup _+_
+    isCommutativeSemigroup = +-isCommutativeSemigroup
+
+    isMonoid : IsMonoid _*_ 1
+    isMonoid = *-1-isMonoid
+
+  open import SemiringByAddingAnnihilatingZero ℕ renaming (A⁺ to ℕ+⁻∞; A[_] to ℕ[_]) public
 ```
--->
-
-
-
-
-```
-data ℕ+⁻∞ : Set where
-  ⁻∞   : ℕ+⁻∞
-  ℕ[_] : ℕ → ℕ+⁻∞
-
-instance
-  _ : HasRawSemiring ℕ+⁻∞
-  _ = record
-        { 0# = ⁻∞
-        ; 1# = ℕ[ 0 ]
-        ; _+_ = _⊔̂_
-        ; _*_ = _+̂_
-        }
-   where
-    _+̂_ : ℕ+⁻∞ → ℕ+⁻∞ → ℕ+⁻∞
-    ⁻∞ +̂ _ = ⁻∞
-    _ +̂ ⁻∞ = ⁻∞
-    ℕ[ i ] +̂ ℕ[ j ] = ℕ[ i ℕ.+ j ]
-
-    _⊔̂_ : ℕ+⁻∞ → ℕ+⁻∞ → ℕ+⁻∞
-    ⁻∞ ⊔̂ b = b
-    a ⊔̂ ⁻∞ = a
-    ℕ[ i ] ⊔̂ ℕ[ j ] = ℕ[ i ℕ.⊔ j ]
-```
-
-And now for the laws
-
-```
-module ℕ+⁻∞-isSemiring where
-
-  open import Relation.Binary.PropositionalEquality
-  open import Data.Product using (_,_)
-  open import Algebra.Definitions {A =  ℕ+⁻∞} _≡_
-
-  isSemiring : IsSemiring ℕ+⁻∞ _+_ _*_ 0# 1#
-  isSemiring =
-    record
-      { isSemiringWithoutAnnihilatingZero = {!!}
-      ; zero = zeroˡ , zeroʳ
-      }
-    where
-      zeroˡ : (a : ℕ+⁻∞) → 0# * a ≡ 0#
-      zeroˡ = λ _ → refl
-
-      zeroʳ : (a : ℕ+⁻∞) → a * 0# ≡ 0#
-      zeroʳ = λ {⁻∞ → refl; ℕ[ _ ] → refl }
-```
-
-
-
---------
-
-Interestingly, introducing the special delay value of `-∞`, along with
-two operations `_+_` and `_⊔_` (max) makes
