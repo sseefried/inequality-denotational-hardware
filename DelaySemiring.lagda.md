@@ -126,7 +126,24 @@ module DelaySemiring where
 open import Data.Nat.Properties
 
 open import SemiringExtras
+
 open SemiringByAddingAnnihilatingZero
-        +-isCommutativeSemigroup *-1-isMonoid *-distrib-+
+        ⊔-isCommutativeSemigroup +-0-isMonoid +-distrib-⊔
         renaming (A⁺ to ℕ+⁻∞; A[_] to ℕ[_]) public
+
+open import HasAlgebra
+
+--
+-- Examples
+--
+
+module _ where
+  open import Relation.Binary.PropositionalEquality
+
+  ex1 : ℕ[ 4 ] + ℕ[ 3 ] ≡ ℕ[ 4 ]
+  ex1 = refl
+
+  ex2 : ℕ[ 4 ] * ℕ[ 3 ] ≡ ℕ[ 7 ]
+  ex2 = refl
+
 ```
