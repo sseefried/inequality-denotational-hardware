@@ -129,15 +129,8 @@ open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Algebra.Structures {A = ℕ} _≡_
 open import Algebra.Definitions {A = ℕ} _≡_
 
-instance
-  isDistrib : _*_ DistributesOver _+_
-  isDistrib = *-distrib-+
-
-  isCommutativeSemigroup : IsCommutativeSemigroup _+_
-  isCommutativeSemigroup = +-isCommutativeSemigroup
-
-  isMonoid : IsMonoid _*_ 1
-  isMonoid = *-1-isMonoid
-
-open import SemiringByAddingAnnihilatingZero ℕ renaming (A⁺ to ℕ+⁻∞; A[_] to ℕ[_]) public
+open import SemiringExtras
+open SemiringByAddingAnnihilatingZero
+        +-isCommutativeSemigroup *-1-isMonoid *-distrib-+
+        renaming (A⁺ to ℕ+⁻∞; A[_] to ℕ[_]) public
 ```

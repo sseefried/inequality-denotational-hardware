@@ -1,6 +1,4 @@
-module SemiringByAddingAnnihilatingZero {a} (A : Set a) where
-
-open import Level
+module SemiringExtras where
 
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Algebra.Core using (Op₂)
@@ -9,16 +7,18 @@ open import Algebra.Core using (Op₂)
 -- The technique below allows me to paramterise Algebra modules just on
 -- the A parameter (not the equivalence)
 --
-module Algebra (A : Set a) where
-  open import Algebra.Structures (_≡_ {A = A}) public
+module Algebra {a} (A : Set a) where
   open import Algebra.Definitions (_≡_ {A = A}) public
 
 open Algebra using (_DistributesOver_)
 open import HasAlgebra hiding (0#)
 
-module _ {_+_ : Op₂ A} {_*_ : Op₂ A} {1# : A}
-         ⦃ *-distrib-+ : _DistributesOver_ A _*_ _+_ ⦄
-         ⦃ _ : IsCommutativeSemigroup A _+_ ⦄ ⦃ _ : IsMonoid A _*_ 1# ⦄ where
+module SemiringByAddingAnnihilatingZero
+         {a} {A : Set a} {_+_ : Op₂ A} {_*_ : Op₂ A} {1# : A}
+         (isCommutativeSemigroup : IsCommutativeSemigroup A _+_)
+         (isMonoid : IsMonoid A _*_ 1# )
+         (*-distrib-+ : _DistributesOver_ A _*_ _+_)
+          where
 
   open import Relation.Binary.PropositionalEquality
   open ≡-Reasoning
@@ -49,6 +49,13 @@ module _ {_+_ : Op₂ A} {_*_ : Op₂ A} {1# : A}
      1̂ = A[ 1# ]
 
   instance
+     _ : IsCommutativeSemigroup A _+_
+     _ = isCommutativeSemigroup
+     _ : IsMonoid A _*_ 1#
+     _ = isMonoid
+     _ : _DistributesOver_ A _*_ _+_
+     _ = *-distrib-+
+
      isSemiring : IsSemiring A⁺ _+̂_ _*̂_ 0̂ 1̂
      isSemiring =
        record
