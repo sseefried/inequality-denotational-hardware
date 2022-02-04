@@ -129,7 +129,7 @@ open import SemiringExtras
 
 open SemiringByAddingAnnihilatingZero
         ⊔-isCommutativeSemigroup +-0-isMonoid +-distrib-⊔
-        renaming (A⁺ to ℕ+⁻∞; A[_] to ℕ[_]) public
+        renaming (A⁺ to ℕ+⁻∞; A[_] to ℕ[_]; 0# to ⁻∞) public
 
 open import HasAlgebra
 
@@ -145,5 +145,4 @@ module _ where
 
   ex2 : ℕ[ 4 ] * ℕ[ 3 ] ≡ ℕ[ 7 ]
   ex2 = refl
-
 ```
