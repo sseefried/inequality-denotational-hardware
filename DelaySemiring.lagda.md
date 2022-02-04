@@ -119,7 +119,6 @@ We can see this by defining the delays `IA = -∞` and `IB = `-∞` and
 calculating what the delay `IC`. `IC = max(IA + AC, IB + BC) = max (-∞
 + AC, -∞ + BC) = -∞`.
 
-<!--
 ```
 module DelaySemiring where
 
