@@ -123,11 +123,7 @@ calculating what the delay `IC`. `IC = max(IA + AC, IB + BC) = max (-∞
 module DelaySemiring where
 
 -- introduce HasSemiring ℕ+⁻∞ instance into scope
-open import Data.Nat
 open import Data.Nat.Properties
-open import Relation.Binary.PropositionalEquality using (_≡_)
-open import Algebra.Structures {A = ℕ} _≡_
-open import Algebra.Definitions {A = ℕ} _≡_
 
 open import SemiringExtras
 open SemiringByAddingAnnihilatingZero
