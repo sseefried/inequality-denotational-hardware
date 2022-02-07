@@ -143,6 +143,6 @@ module _ where
   ex1 : ℕ[ 4 ] ⊔ ℕ[ 3 ] ≡ ℕ[ 4 ]
   ex1 = refl
 
-  ex2 : ℕ[ 4 ] + ℕ[ 3 ] ≡ ℕ[ 7 ]
-  ex2 = refl
+  ex2 : ℕ[ 4 ] + ℕ[ 0 ] ≡ ℕ[ 4 ]
+  ex2 = HasAlgebra.*-identityʳ
 ```
