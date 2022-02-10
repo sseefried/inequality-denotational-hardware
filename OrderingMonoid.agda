@@ -249,45 +249,13 @@ maxMat m = vecMax (map vecMax m)
 extract : (1 ⇨ 1) → ℕ+⁻∞
 extract ((a ∷ []) ∷ []) = a
 
-combine′ : {n : ℕ} → PT (1 ⇨ 1) n → (2 ^ n) ⇨ 1
-combine′ = go
-  where
-
-    go : {n : ℕ} → PT (1 ⇨ 1) n → (2 ^ n) ⇨ 1
-    go nil =  rowOf ⁻∞
-    go (leaf a) = rowOf (extract a)
-    go {ℕ.suc n} (fork (pt1 , pt2)) rewrite ℕ.*-identityˡ (2 ^ n) =
-      let (a , b) = (go pt1 , go pt2)
-      in a ↕ b
-
-combine : {n : ℕ} → PT (1 ⇨ 1) n → 1 ⇨ 1
-combine = go
-  where
-
-    go : {n : ℕ} → PT (1 ⇨ 1) n → 1 ⇨ 1
-    go nil =  rowOf ⁻∞
-    go (leaf a) = rowOf (extract a)
-    go {ℕ.suc n} (fork (pt1 , pt2)) =
-      let (a , b) = (go pt1 , go pt2)
-      in ⟨▲⟩ ∘ (a ▵ b)
-
 data T1 : Set where
   mkT1 : T1
 
-comb′ : {n : ℕ} → PT T1 n → ℕ
-comb′ nil                = 0
-comb′ (leaf _)           = 0
-comb′ (fork (pt₁ , pt₂)) = ℕ.suc (comb′ pt₁ ℕ.⊔ comb′ pt₂)
-
-thm′ : {n : ℕ} → (pt : PT T1 n) → comb′ pt ℕ.≤ n
-thm′ nil                = z≤n
-thm′ (leaf _)           = z≤n
-thm′ (fork (pt1 , pt2)) = s≤s (ℕ.⊔-lub (thm′ pt1) (thm′ pt2))
-
-comb2 : {n : ℕ} → PT T1 n → (1 ⇨ 1)
-comb2 nil                = [[⁻∞]]
-comb2 (leaf _)           = rowOf (ℕ[ 0 ])
-comb2 (fork (pt₁ , pt₂)) = ⟨▲⟩ ∘ (comb2 pt₁ ▵ comb2 pt₂)
+combine : {n : ℕ} → PT T1 n → (1 ⇨ 1)
+combine nil                = [[⁻∞]]
+combine (leaf _)           = rowOf (ℕ[ 0 ])
+combine (fork (pt₁ , pt₂)) = ⟨▲⟩ ∘ (combine pt₁ ▵ combine pt₂)
 
 ----
 
@@ -369,10 +337,9 @@ lemma {n} {c₁@((a ∷ []) ∷ [])} {c₂@((b ∷ []) ∷ [])} pf₁ pf₂ =
     open import Relation.Binary.Reasoning.PartialOrder ≤-poset
     open IsSemiring ⦃ … ⦄
 
-
-thm2 : {n : ℕ} → (pt : PT T1 n) → extract (comb2 pt) ≤ ℕ[ n ]
-thm2 nil                = ⁻∞≤n
-thm2 (leaf a)           = ℕ≤ℕ z≤n
-thm2 {n} (fork (pt1 , pt2)) =
-  let (a , b) = (thm2 pt1 , thm2 pt2)
-  in lemma {c₁ = comb2 pt1} a b
+thm : {n : ℕ} → (pt : PT T1 n) → extract (combine pt) ≤ ℕ[ n ]
+thm nil                = ⁻∞≤n
+thm (leaf a)           = ℕ≤ℕ z≤n
+thm {n} (fork (pt1 , pt2)) =
+  let (a , b) = (thm pt1 , thm pt2)
+  in lemma {c₁ = combine pt1} a b
