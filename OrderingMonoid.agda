@@ -189,8 +189,8 @@ module Examples′ where
   d₀′ = d₀
   d₁′ = d₁
 
-  _ : Set
-  _ = {! ex6′!}
+--  _ : Set
+--  _ = {! ex6′!}
 
 
 --
@@ -326,18 +326,48 @@ dot-⊔ {n = ℕ.suc n} z (a ∷ as) =
 
 ----
 
++-monoʳ-≤ : ∀ n → (_+_ n) Preserves _≤_ ⟶ _≤_
++-monoʳ-≤ ⁻∞ _ = ⁻∞≤n
++-monoʳ-≤ ℕ[ m ] ⁻∞≤n  = ⁻∞≤n
++-monoʳ-≤ ℕ[ m ] (ℕ≤ℕ x≤y) = ℕ≤ℕ (ℕ.+-monoʳ-≤ m x≤y)
+
 lemma : {n : ℕ} {c₁ c₂ : 1 ⇨ 1}
     → (pf₁ : extract c₁ ≤ ℕ[ n ])
     → (pf₂ : extract c₂ ≤ ℕ[ n ])
     →  extract (⟨▲⟩ ∘ (c₁ ▵ c₂)) ≤ ℕ[ ℕ.suc n ]
-lemma {n} {c₁} {c₂} pf₁ pf₂ =
+lemma {n} {c₁@((a ∷ []) ∷ [])} {c₂@((b ∷ []) ∷ [])} pf₁ pf₂ =
   begin
     extract (⟨▲⟩ ∘ (c₁ ▵ c₂))
-  ≤⟨ {!!} ⟩
+  ≡⟨⟩
+    extract ( (replicate ℕ[ 1 ] ∷ []) ∘ ((a ∷ []) ∷ (b ∷ []) ∷ []))
+  ≡⟨⟩
+    extract ((((replicate ℕ[ 1 ]) · (a ∷ b ∷ [])) ∷ []) ∷ [])
+  ≡⟨⟩
+    (replicate ℕ[ 1 ]) · (a ∷ b ∷ [])
+  ≡⟨ dot-⊔ ℕ[ 1 ] (a ∷ b ∷ [])  ⟩
+    ℕ[ 1 ] + ⊔-vec (a ∷ b ∷ [])
+  ≡⟨⟩
+    ℕ[ 1 ] + (a ⊔ ⊔-vec (b ∷ []))
+  ≡⟨⟩
+    ℕ[ 1 ] + (a ⊔ (b ⊔ ⊔-vec []))
+  ≡⟨⟩
+    ℕ[ 1 ] + (a ⊔ (b ⊔ ⁻∞))
+  ≡⟨⟩
+    ℕ[ 1 ] + (extract c₁ ⊔ (extract c₂ ⊔ ⁻∞))
+  ≤⟨ +-monoʳ-≤ ℕ[ 1 ] (⊔-monoˡ-≤ (extract c₂ ⊔ ⁻∞) pf₁) ⟩
+    ℕ[ 1 ] + (ℕ[ n ] ⊔ (extract c₂ ⊔ ⁻∞))
+  ≤⟨ +-monoʳ-≤ ℕ[ 1 ] (⊔-monoʳ-≤ ℕ[ n ] (⊔-monoˡ-≤ ⁻∞ pf₂)) ⟩
+    ℕ[ 1 ] + (ℕ[ n ] ⊔ (ℕ[ n ] ⊔ ⁻∞))
+  ≡⟨⟩
+      ℕ[ 1 ] + (ℕ[ n ] ⊔ ℕ[ n ])
+  ≡⟨ cong (ℕ[ 1 ] +_) (⊔-idem ℕ[ n ]) ⟩
+     ℕ[ 1 ] + ℕ[ n ]
+  ≡⟨⟩
     ℕ[ ℕ.suc n ]
   ∎
   where
     open import Relation.Binary.Reasoning.PartialOrder ≤-poset
+    open IsSemiring ⦃ … ⦄
 
 
 thm2 : {n : ℕ} → (pt : PT T1 n) → extract (comb2 pt) ≤ ℕ[ n ]
