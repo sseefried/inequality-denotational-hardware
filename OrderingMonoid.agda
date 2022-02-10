@@ -239,25 +239,18 @@ p
 
 open import Data.Vec
 
-
-maxMat : {m n : ℕ} → Matrix m n → ℕ+⁻∞
-maxMat m = vecMax (map vecMax m)
-  where
-    vecMax : {n : ℕ} → Vec ℕ+⁻∞ n → ℕ+⁻∞
-    vecMax = foldr _ _⊔_ ⁻∞
-
 extract : (1 ⇨ 1) → ℕ+⁻∞
 extract ((a ∷ []) ∷ []) = a
 
-data T1 : Set where
-  mkT1 : T1
+--
+-- A perfect tree of unit values is used to describe the shape of a given expression
+-- A leaf node is an input. A nil value is no input. A fork represents an application of ⟨▲⟩.
+--
 
-combine : {n : ℕ} → PT T1 n → (1 ⇨ 1)
+combine : {n : ℕ} → PT Unit n → (1 ⇨ 1)
 combine nil                = [[⁻∞]]
 combine (leaf _)           = rowOf (ℕ[ 0 ])
 combine (fork (pt₁ , pt₂)) = ⟨▲⟩ ∘ (combine pt₁ ▵ combine pt₂)
-
-----
 
 ⊔-vec : {n : ℕ} → Vec ℕ+⁻∞ n → ℕ+⁻∞
 ⊔-vec = foldr _ _⊔_ ⁻∞
@@ -337,7 +330,14 @@ lemma {n} {c₁@((a ∷ []) ∷ [])} {c₂@((b ∷ []) ∷ [])} pf₁ pf₂ =
     open import Relation.Binary.Reasoning.PartialOrder ≤-poset
     open IsSemiring ⦃ … ⦄
 
-thm : {n : ℕ} → (pt : PT T1 n) → extract (combine pt) ≤ ℕ[ n ]
+--
+-- Main theorem
+--
+-- Combining a perfect tree of inputs of depth n will always
+-- have a delay less than or equal to n
+--
+
+thm : {n : ℕ} → (pt : PT Unit n) → extract (combine pt) ≤ ℕ[ n ]
 thm nil                = ⁻∞≤n
 thm (leaf a)           = ℕ≤ℕ z≤n
 thm {n} (fork (pt1 , pt2)) =
