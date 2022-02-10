@@ -10,7 +10,7 @@ open import Categorical.Equiv hiding (refl)
 open import Functions hiding (tt ; if_then_else_)
 open import Data.Unit renaming (⊤ to Unit) hiding (_≤_)
 import Categorical.Laws as Laws
-open import Relation.Binary.PropositionalEquality
+open import Relation.Binary.PropositionalEquality renaming (sym to ≡-sym)
 open import Data.Product using (Σ; _,_) renaming (_×_ to _×′_)
 open import Relation.Nullary
 
@@ -125,52 +125,27 @@ module Examples where
   d₁ = ((⟨▲⟩ ∘ id) ⊗ (id ∘ ⟨▲⟩))
 
 
-open import Data.Integer hiding (_+_; _*_;_≤_;_⊔_;_≥_; suc)
-import Data.Integer as ℤ
-import Data.Integer.Properties as ℤ
-import Data.Sign as S
-
-data ℤ∞ : Set where
-  -∞ : ℤ∞
-  ℤᶠ : ℤ → ℤ∞
-
+open import DelaySemiring hiding (_∙_)
 open import Algebra.Bundles using (RawSemiring)
 
-infixl 7 _⊔_
-_⊔_ : ℤ∞ → ℤ∞ → ℤ∞
--∞ ⊔ b = b
-a ⊔ -∞ = a
-ℤᶠ m ⊔ ℤᶠ n = ℤᶠ (m ℤ.⊔ n)
-
-infixl 6 _+_
-_+_ : ℤ∞ → ℤ∞ → ℤ∞
--∞ + _  = -∞
-_  + -∞ = -∞
-(ℤᶠ m) + (ℤᶠ n) = ℤᶠ (m ℤ.+ n)
-
-ℤ∞-Semiring : RawSemiring 0ℓ 0ℓ
-ℤ∞-Semiring =
+ℕ+⁻∞-Semiring : RawSemiring 0ℓ 0ℓ
+ℕ+⁻∞-Semiring =
   record
-    { Carrier = ℤ∞
+    { Carrier = ℕ+⁻∞
     ; _≈_ = _≡_
     ; _+_ = _⊔_
     ; _*_ = _+_
-    ; 0# = -∞
-    ; 1# = ℤᶠ 0ℤ
+    ; 0# = ⁻∞
+    ; 1# = ℕ[ 0 ]
     }
 
-
-suc : ℤ∞ → ℤ∞
-suc -∞ = -∞
-suc (ℤᶠ n) = ℤᶠ (ℤ.suc n)
-
-open import Matrix ℤ∞-Semiring
+open import Matrix ℕ+⁻∞-Semiring
 
 _⇨_ : ℕ → ℕ → Set
 c ⇨ r = Matrix r c
 
-[[-∞]] : 1 ⇨ 1
-[[-∞]] = allZero
+[[⁻∞]] : 1 ⇨ 1
+[[⁻∞]] = allZero
 
 instance
   _ : Category {obj = ℕ} _⇨_
@@ -189,10 +164,10 @@ instance
   _ = record { ⋚ = 1 }
 
   _ : ⋚-Monoid _⇨_
-  _ = record { is< = [[-∞]]
-             ; is> = [[-∞]]
-             ; is= = [[-∞]]
-             ; ⟨▲⟩ = rowOf (ℤᶠ 1ℤ)
+  _ = record { is< = [[⁻∞]]
+             ; is> = [[⁻∞]]
+             ; is= = [[⁻∞]]
+             ; ⟨▲⟩ = rowOf (ℕ[ 1 ])
              }
 
 module Examples′ where
@@ -252,7 +227,7 @@ pt5 = fork ( fork (fork (leaf 1 , leaf 2) , fork (leaf 3 , leaf 4))
   1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ 6 ∷ 7 ∷ []
 ⇒ fork (1 , (toPT  2 ∷ 3 ∷ 4 ∷ []) , (toPT  5 ∷ 6 ∷ 7 ∷ []))
 ⇒ fork (1 , fork (2 , (toPT  3 ∷ []) (toPt 4 ∷ [])) , fork (5 , toPT 6 ∷ []) , toPT (7 ∷ []))
-
+p
   1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []
 ⇒ fork (1 , (toPT  2 ∷ 3 ∷ []) , (toPT  4 ∷ 5 ∷ []))
 ⇒ fork (1 , fork (2 , (toPT  3 ∷ []) (toPt [])) , fork (4 , toPT 5 ∷ []) , toPT [])
@@ -264,13 +239,14 @@ pt5 = fork ( fork (fork (leaf 1 , leaf 2) , fork (leaf 3 , leaf 4))
 
 open import Data.Vec
 
-maxMat : {m n : ℕ} → Matrix m n → ℤ∞
+
+maxMat : {m n : ℕ} → Matrix m n → ℕ+⁻∞
 maxMat m = vecMax (map vecMax m)
   where
-    vecMax : {n : ℕ} → Vec ℤ∞ n → ℤ∞
-    vecMax = foldl _ _⊔_ -∞
+    vecMax : {n : ℕ} → Vec ℕ+⁻∞ n → ℕ+⁻∞
+    vecMax = foldr _ _⊔_ ⁻∞
 
-extract : (1 ⇨ 1) → ℤ∞
+extract : (1 ⇨ 1) → ℕ+⁻∞
 extract ((a ∷ []) ∷ []) = a
 
 combine′ : {n : ℕ} → PT (1 ⇨ 1) n → (2 ^ n) ⇨ 1
@@ -278,7 +254,7 @@ combine′ = go
   where
 
     go : {n : ℕ} → PT (1 ⇨ 1) n → (2 ^ n) ⇨ 1
-    go nil =  rowOf -∞
+    go nil =  rowOf ⁻∞
     go (leaf a) = rowOf (extract a)
     go {ℕ.suc n} (fork (pt1 , pt2)) rewrite ℕ.*-identityˡ (2 ^ n) =
       let (a , b) = (go pt1 , go pt2)
@@ -289,24 +265,11 @@ combine = go
   where
 
     go : {n : ℕ} → PT (1 ⇨ 1) n → 1 ⇨ 1
-    go nil =  rowOf -∞
+    go nil =  rowOf ⁻∞
     go (leaf a) = rowOf (extract a)
     go {ℕ.suc n} (fork (pt1 , pt2)) =
       let (a , b) = (go pt1 , go pt2)
       in ⟨▲⟩ ∘ (a ▵ b)
-
-ℤ⁺[_] : ℕ → ℤ
-ℤ⁺[ n ] = S.+ ◃ n
-
-ℤ∞⁺[_] : ℕ → ℤ∞
-ℤ∞⁺[ n ] = ℤᶠ (S.+ ◃ n)
-
-data _≤_ : ℤ∞ → ℤ∞ → Set where
-  -∞≤x       : {x : ℤ∞}           →  -∞       ≤  x
-  ℤᶠ≤ℤᶠ  : {x y : ℤ} → x ℤ.≤ y → (ℤᶠ x) ≤ (ℤᶠ y)
-
-_≥_ : ℤ∞ → ℤ∞ → Set
-a ≥ b = b ≤ a
 
 data T1 : Set where
   mkT1 : T1
@@ -321,136 +284,65 @@ thm′ nil                = z≤n
 thm′ (leaf _)           = z≤n
 thm′ (fork (pt1 , pt2)) = s≤s (ℕ.⊔-lub (thm′ pt1) (thm′ pt2))
 
-open import Relation.Binary.Bundles using (TotalPreorder)
-open import Algebra.Construct.NaturalChoice.Base
-open import Relation.Binary.Definitions
-open import Relation.Binary.Structures
-open import Data.Sum
-import Data.Sum as Sum
-
-≤-isPreorder : IsPreorder _≡_ _≤_
-≤-isPreorder = {!!}
-
-
-≤-total : Total _≤_
-≤-total -∞ _ = inj₁ -∞≤x
-≤-total _ -∞ = inj₂ -∞≤x
-≤-total (ℤᶠ i) (ℤᶠ j) = Sum.map ℤᶠ≤ℤᶠ ℤᶠ≤ℤᶠ (ℤ.≤-total i j)
-
-≤-isTotalPreorder : IsTotalPreorder _≡_ _≤_
-≤-isTotalPreorder = record
-  { isPreorder = ≤-isPreorder
-  ; total = ≤-total
-  }
-
-≤-totalPreorder : TotalPreorder 0ℓ 0ℓ 0ℓ
-≤-totalPreorder = record
-  { isTotalPreorder = ≤-isTotalPreorder
-  }
-
-i≤j⇒i⊔j≡j : {i j : ℤ∞} → i ≤ j → i ⊔ j ≡ j
-i≤j⇒i⊔j≡j -∞≤x             = refl
-i≤j⇒i⊔j≡j (ℤᶠ≤ℤᶠ x≤y)  = cong ℤᶠ (ℤ.i≤j⇒i⊔j≡j x≤y)
-
-⊔-comm : (i j : ℤ∞) → i ⊔ j ≡ j ⊔ i
-⊔-comm -∞       -∞       = refl
-⊔-comm -∞       (ℤᶠ j) = refl
-⊔-comm (ℤᶠ i) -∞       = refl
-⊔-comm (ℤᶠ i) (ℤᶠ j) = cong ℤᶠ (ℤ.⊔-comm i j)
-
-
-i≥j⇒i⊔j≡i : {i j : ℤ∞} → i ≥ j → i ⊔ j ≡ i
-i≥j⇒i⊔j≡i {i} {j} i≤j rewrite ⊔-comm i j = i≤j⇒i⊔j≡j {j} {i} i≤j
-
-
-⊔-operator : MaxOperator ≤-totalPreorder
-⊔-operator = record
-  { _⊔_ = _⊔_
-  ; x≤y⇒x⊔y≈y = i≤j⇒i⊔j≡j
-  ; x≥y⇒x⊔y≈x = i≥j⇒i⊔j≡i
-  }
-
-open import Algebra.Construct.NaturalChoice.MaxOp ⊔-operator using (⊔-lub)
-
-
 comb2 : {n : ℕ} → PT T1 n → (1 ⇨ 1)
-comb2 nil                = [[-∞]]
-comb2 (leaf _)           = rowOf (ℤᶠ 0ℤ)
+comb2 nil                = [[⁻∞]]
+comb2 (leaf _)           = rowOf (ℕ[ 0 ])
 comb2 (fork (pt₁ , pt₂)) = ⟨▲⟩ ∘ (comb2 pt₁ ▵ comb2 pt₂)
-
-foo : {n : ℕ} {c₁ c₂ : 1 ⇨ 1}
-    → (pf₁ : extract c₁ ≤ ℤ∞⁺[ n ])
-    → (pf₂ : extract c₂ ≤ ℤ∞⁺[ n ])
-    →  extract (⟨▲⟩ ∘ (c₁ ▵ c₂)) ≤ ℤ∞⁺[ ℕ.suc n ]
-foo pf₁ pf₂ = {!!}
-
-
-thm2 : {n : ℕ} → (pt : PT T1 n) → extract (comb2 pt) ≤ ℤ∞⁺[ n ]
-thm2 nil                = -∞≤x
-thm2 (leaf a)           = ℤᶠ≤ℤᶠ (+≤+ z≤n)
-thm2 {n} (fork (pt1 , pt2)) =
-  let (a , b) = (thm2 pt1 , thm2 pt2)
-  in foo {c₁ = comb2 pt1} a b
 
 ----
 
-⊔-vec : {n : ℕ} → Vec ℤ∞ n → ℤ∞
-⊔-vec = foldl _ _⊔_ -∞
+⊔-vec : {n : ℕ} → Vec ℕ+⁻∞ n → ℕ+⁻∞
+⊔-vec = foldr _ _⊔_ ⁻∞
 
-dot-max : {n : ℕ} (z : ℤ∞) (v : Vec ℤ∞ n) → replicate z · v ≡ z + ⊔-vec v
-dot-max -∞ []      = refl
-dot-max (ℤᶠ _) []  = refl
-dot-max {n = ℕ.suc n} -∞ (a ∷ as) =
+dot-⊔ : {n : ℕ} (z : ℕ+⁻∞) (v : Vec ℕ+⁻∞ n) → replicate z · v ≡ z + ⊔-vec v
+dot-⊔ ⁻∞       []  = refl
+dot-⊔ (ℕ[ _ ]) []  = refl
+dot-⊔ {n = ℕ.suc n} z (a ∷ as) =
     begin
-      replicate -∞ · (a ∷ as)
+      replicate z · (a ∷ as)
     ≡⟨⟩
-      (-∞ ∷ replicate -∞) · (a ∷ as)
+      (z ∷ replicate z) · (a ∷ as)
     ≡⟨⟩
-      foldl _ _⊔_ -∞ (zipWith _+_ (-∞ ∷ replicate -∞) (a ∷ as))
+      foldr _ _⊔_ ⁻∞ (zipWith _+_ (z ∷ replicate z) (a ∷ as))
     ≡⟨⟩
-      foldl _ _⊔_ -∞ (-∞ + a ∷ zipWith _+_ (replicate -∞) as)
+      foldr _ _⊔_ ⁻∞ (z + a ∷ zipWith _+_ (replicate z) as)
     ≡⟨⟩
-      foldl _ _⊔_ (-∞ + (-∞ + a)) (zipWith _+_ (replicate -∞) as)
+      (z + a) ⊔ foldr _ _⊔_ ⁻∞ (zipWith _+_ (replicate z) as)
     ≡⟨⟩
-      foldl _ _⊔_ -∞ (zipWith _+_ (replicate -∞) as)
+      (z + a) ⊔ (replicate z · as)
+    ≡⟨ cong ((z + a) ⊔_) (dot-⊔ {n} z as) ⟩
+      (z + a) ⊔ (z + ⊔-vec as) -- (z * a) + (z * ⊔-vec as)
+    ≡⟨ ≡-sym (*-distribʳ {x = z} {a}) ⟩
+      z + (a ⊔ ⊔-vec as)
     ≡⟨⟩
-      replicate -∞ · as
-    ≡⟨ dot-max {n} -∞ as ⟩
-      -∞ + ⊔-vec as
+      z + (a ⊔ foldr _ _⊔_ ⁻∞ as)
     ≡⟨⟩
-      -∞
+      z + (foldr _ _⊔_ ⁻∞ (a ∷ as))
     ≡⟨⟩
-      -∞ + ⊔-vec (a ∷ as)
+      z + (⊔-vec (a ∷ as))
     ∎
   where
     open ≡-Reasoning
-dot-max {n = ℕ.suc n} zf@(ℤᶠ z) (a ∷ as) =
-    begin
-      replicate zf · (a ∷ as)
-    ≡⟨⟩
-      (zf ∷ replicate zf) · (a ∷ as)
-    ≡⟨⟩
-      foldl _ _⊔_ -∞ (zipWith _+_ (zf ∷ replicate zf) (a ∷ as))
-    ≡⟨⟩
-      foldl _ _⊔_ -∞ (zf + a ∷ zipWith _+_ (replicate zf) as)
-    ≡⟨⟩
-      foldl _ _⊔_ (zf + a) (zipWith _+_ (replicate zf) as)
-    ≡⟨ {!!} ⟩ -- monoidal fold property
-      (zf + a) ⊔ (foldl _ _⊔_ -∞ (zipWith _+_ (replicate zf) as))
-    ≡⟨⟩
-      (zf + a) ⊔ (replicate zf · as)
-    ≡⟨ cong (λ □ → (zf + a) ⊔ □) (dot-max {n} zf as) ⟩
-      (zf + a) ⊔ (zf + ⊔-vec as) -- (zf * a) + (zf * ⊔-vec as)
-    ≡⟨ {!!} ⟩ -- ⊔-distribˡ-+  or -- *-distribˡ-+
-      zf + (a ⊔ ⊔-vec as)
-    ≡⟨⟩
-      zf + (a ⊔ foldl _ _⊔_ -∞ as)
-    ≡⟨⟩
-      zf + (a ⊔ foldl _ _⊔_ -∞ as)
-    ≡⟨ {!!} ⟩ -- monoidal fold property
-      zf + (foldl _ _⊔_ -∞ (a ∷ as))
-    ≡⟨⟩
-      zf + (⊔-vec (a ∷ as))
-    ∎
+
+----
+
+lemma : {n : ℕ} {c₁ c₂ : 1 ⇨ 1}
+    → (pf₁ : extract c₁ ≤ ℕ[ n ])
+    → (pf₂ : extract c₂ ≤ ℕ[ n ])
+    →  extract (⟨▲⟩ ∘ (c₁ ▵ c₂)) ≤ ℕ[ ℕ.suc n ]
+lemma {n} {c₁} {c₂} pf₁ pf₂ =
+  begin
+    extract (⟨▲⟩ ∘ (c₁ ▵ c₂))
+  ≤⟨ {!!} ⟩
+    ℕ[ ℕ.suc n ]
+  ∎
   where
-    open ≡-Reasoning
+    open import Relation.Binary.Reasoning.PartialOrder ≤-poset
+
+
+thm2 : {n : ℕ} → (pt : PT T1 n) → extract (comb2 pt) ≤ ℕ[ n ]
+thm2 nil                = ⁻∞≤n
+thm2 (leaf a)           = ℕ≤ℕ z≤n
+thm2 {n} (fork (pt1 , pt2)) =
+  let (a , b) = (thm2 pt1 , thm2 pt2)
+  in lemma {c₁ = comb2 pt1} a b

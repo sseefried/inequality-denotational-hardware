@@ -22,7 +22,7 @@ module Matrix (s : RawSemiring 0ℓ 0ℓ) where
   Matrix = MatrixPoly A
 
   _·_ : {n : ℕ} → Vec A n → Vec A n → A
-  _·_ {n} v₁ v₂ = foldl _ _+_ 0# (zipWith _*_ v₁ v₂)
+  _·_ {n} v₁ v₂ = foldr _ _+_ 0# (zipWith _*_ v₁ v₂)
 
   private
     cross : ∀ {A} {m n : ℕ} → Vec A m → Vec A n → MatrixPoly (A × A) m n

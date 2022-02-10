@@ -1,5 +1,3 @@
-<!-- -*-agda2-*- -->
-
 <!--
 ```
 {-# OPTIONS --guardedness #-}  -- For tesing/IO

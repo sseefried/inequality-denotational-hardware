@@ -1,4 +1,4 @@
-module SemiringExtras where
+module SemiringExtras {a} {A : Set a} where
 
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Algebra.Core using (Op₂)
@@ -9,12 +9,17 @@ open import Algebra.Core using (Op₂)
 --
 module Algebra {a} (A : Set a) where
   open import Algebra.Definitions (_≡_ {A = A}) public
+  open import Algebra.Structures (_≡_ {A = A}) public
 
 open Algebra using (_DistributesOver_)
 open import HasAlgebra hiding (0#)
 
+data A⁺ : Set a where
+  0#   : A⁺
+  A[_] : A → A⁺
+
 module SemiringByAddingAnnihilatingZero
-         {a} {A : Set a} {_+_ : Op₂ A} {_*_ : Op₂ A} {1# : A}
+          {_+_ : Op₂ A} {_*_ : Op₂ A} {1# : A}
          (isCommutativeSemigroup : IsCommutativeSemigroup A _+_)
          (isMonoid : IsMonoid A _*_ 1# )
          (*-distrib-+ : _DistributesOver_ A _*_ _+_)
@@ -23,10 +28,6 @@ module SemiringByAddingAnnihilatingZero
   open import Relation.Binary.PropositionalEquality
   open ≡-Reasoning
   open import Data.Product using (_,_; proj₁; proj₂)
-
-  data A⁺ : Set a where
-    0#   : A⁺
-    A[_] : A → A⁺
 
   private
      infixl 6 _+̂_
