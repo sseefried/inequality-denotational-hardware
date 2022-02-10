@@ -285,13 +285,6 @@ dot-⊔ {n = ℕ.suc n} z (a ∷ as) =
   where
     open ≡-Reasoning
 
-----
-
-+-monoʳ-≤ : ∀ n → (_+_ n) Preserves _≤_ ⟶ _≤_
-+-monoʳ-≤ ⁻∞ _ = ⁻∞≤n
-+-monoʳ-≤ ℕ[ m ] ⁻∞≤n  = ⁻∞≤n
-+-monoʳ-≤ ℕ[ m ] (ℕ≤ℕ x≤y) = ℕ≤ℕ (ℕ.+-monoʳ-≤ m x≤y)
-
 lemma : {n : ℕ} {c₁ c₂ : 1 ⇨ 1}
     → (pf₁ : extract c₁ ≤ ℕ[ n ])
     → (pf₂ : extract c₂ ≤ ℕ[ n ])
@@ -308,19 +301,17 @@ lemma {n} {c₁@((a ∷ []) ∷ [])} {c₂@((b ∷ []) ∷ [])} pf₁ pf₂ =
   ≡⟨ dot-⊔ ℕ[ 1 ] (a ∷ b ∷ [])  ⟩
     ℕ[ 1 ] + ⊔-vec (a ∷ b ∷ [])
   ≡⟨⟩
-    ℕ[ 1 ] + (a ⊔ ⊔-vec (b ∷ []))
-  ≡⟨⟩
-    ℕ[ 1 ] + (a ⊔ (b ⊔ ⊔-vec []))
-  ≡⟨⟩
     ℕ[ 1 ] + (a ⊔ (b ⊔ ⁻∞))
+  ≡⟨ cong (λ □ → ℕ[ 1 ] + (a ⊔ □)) DelaySemiring.+-identityʳ ⟩ -- I should rename theorems in DelaySemiring. But there are so many!
+    ℕ[ 1 ] + (a ⊔ b)
   ≡⟨⟩
-    ℕ[ 1 ] + (extract c₁ ⊔ (extract c₂ ⊔ ⁻∞))
-  ≤⟨ +-monoʳ-≤ ℕ[ 1 ] (⊔-monoˡ-≤ (extract c₂ ⊔ ⁻∞) pf₁) ⟩
-    ℕ[ 1 ] + (ℕ[ n ] ⊔ (extract c₂ ⊔ ⁻∞))
-  ≤⟨ +-monoʳ-≤ ℕ[ 1 ] (⊔-monoʳ-≤ ℕ[ n ] (⊔-monoˡ-≤ ⁻∞ pf₂)) ⟩
-    ℕ[ 1 ] + (ℕ[ n ] ⊔ (ℕ[ n ] ⊔ ⁻∞))
+    ℕ[ 1 ] + (extract c₁ ⊔ extract c₂)
+  ≤⟨ +-monoʳ-≤ ℕ[ 1 ] (⊔-monoˡ-≤ (extract c₂) pf₁) ⟩
+    ℕ[ 1 ] + (ℕ[ n ] ⊔ extract c₂)
+  ≤⟨ +-monoʳ-≤ ℕ[ 1 ] (⊔-monoʳ-≤ ℕ[ n ] pf₂) ⟩
+    ℕ[ 1 ] + (ℕ[ n ] ⊔ ℕ[ n ])
   ≡⟨⟩
-      ℕ[ 1 ] + (ℕ[ n ] ⊔ ℕ[ n ])
+    ℕ[ 1 ] + (ℕ[ n ] ⊔ ℕ[ n ])
   ≡⟨ cong (ℕ[ 1 ] +_) (⊔-idem ℕ[ n ]) ⟩
      ℕ[ 1 ] + ℕ[ n ]
   ≡⟨⟩

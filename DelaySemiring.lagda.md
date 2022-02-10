@@ -133,7 +133,6 @@ open SemiringByAddingAnnihilatingZero
 
 open import HasAlgebra renaming (_+_ to _⊔_; _*_ to _+_) public
 
-
 module _ where
   open import Level using (0ℓ)
   open import Relation.Binary.PropositionalEquality using (_≡_; cong)
@@ -225,6 +224,11 @@ module _ where
     }
 
   open import Algebra.Construct.NaturalChoice.MaxOp ⊔-operator public
+
+  +-monoʳ-≤ : ∀ n → (_+_ n) Preserves _≤_ ⟶ _≤_
+  +-monoʳ-≤ ⁻∞ _ = ⁻∞≤n
+  +-monoʳ-≤ ℕ[ m ] ⁻∞≤n  = ⁻∞≤n
+  +-monoʳ-≤ ℕ[ m ] (ℕ≤ℕ x≤y) = ℕ≤ℕ (ℕ.+-monoʳ-≤ m x≤y)
 
 --
 -- Examples
