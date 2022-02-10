@@ -293,24 +293,19 @@ lemma {n} {c₁@((a ∷ []) ∷ [])} {c₂@((b ∷ []) ∷ [])} pf₁ pf₂ =
   begin
     extract (⟨▲⟩ ∘ (c₁ ▵ c₂))
   ≡⟨⟩
-    extract ( (replicate ℕ[ 1 ] ∷ []) ∘ ((a ∷ []) ∷ (b ∷ []) ∷ []))
-  ≡⟨⟩
-    extract ((((replicate ℕ[ 1 ]) · (a ∷ b ∷ [])) ∷ []) ∷ [])
-  ≡⟨⟩
     (replicate ℕ[ 1 ]) · (a ∷ b ∷ [])
   ≡⟨ dot-⊔ ℕ[ 1 ] (a ∷ b ∷ [])  ⟩
     ℕ[ 1 ] + ⊔-vec (a ∷ b ∷ [])
   ≡⟨⟩
     ℕ[ 1 ] + (a ⊔ (b ⊔ ⁻∞))
-  ≡⟨ cong (λ □ → ℕ[ 1 ] + (a ⊔ □)) DelaySemiring.+-identityʳ ⟩ -- I should rename theorems in DelaySemiring. But there are so many!
+  ≡⟨ cong (λ □ → ℕ[ 1 ] + (a ⊔ □)) DelaySemiring.+-identityʳ ⟩
+    -- I should rename theorems in DelaySemiring. ^^^  But there are so many!
     ℕ[ 1 ] + (a ⊔ b)
   ≡⟨⟩
     ℕ[ 1 ] + (extract c₁ ⊔ extract c₂)
   ≤⟨ +-monoʳ-≤ ℕ[ 1 ] (⊔-monoˡ-≤ (extract c₂) pf₁) ⟩
     ℕ[ 1 ] + (ℕ[ n ] ⊔ extract c₂)
   ≤⟨ +-monoʳ-≤ ℕ[ 1 ] (⊔-monoʳ-≤ ℕ[ n ] pf₂) ⟩
-    ℕ[ 1 ] + (ℕ[ n ] ⊔ ℕ[ n ])
-  ≡⟨⟩
     ℕ[ 1 ] + (ℕ[ n ] ⊔ ℕ[ n ])
   ≡⟨ cong (ℕ[ 1 ] +_) (⊔-idem ℕ[ n ]) ⟩
      ℕ[ 1 ] + ℕ[ n ]
